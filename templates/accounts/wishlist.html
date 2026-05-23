@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load product_tags %}
+
+{% block title %}My Wishlist — SheGlow{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+  <div class="flex items-center justify-between mb-8">
+    <h1 class="font-serif text-3xl font-light text-charcoal">
+      My Wishlist
+      {% if items %}<span class="text-lg text-gray-400 font-sans font-normal">({{ items|length }})</span>{% endif %}
+    </h1>
+    {% if items %}
+    <a href="{% url 'product_list' %}" class="text-sm text-gray-500 hover:text-rose-400 transition-colors">Continue Shopping →</a>
+    {% endif %}
+  </div>
+
+  {% if items %}
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+    {% for item in items %}
+    {% include 'products/partials/product_card.html' with product=item.product %}
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <!-- Empty state -->
+  <div class="text-center py-24">
+    <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-rose-50 mb-6">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-rose-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+      </svg>
+    </div>
+    <h2 class="font-serif text-2xl text-gray-400 mb-2">Your wishlist is empty</h2>
+    <p class="text-gray-400 text-sm mb-8 max-w-xs mx-auto">
+      Tap the heart icon on any product to save it for later
+    </p>
+    <a href="{% url 'product_list' %}" class="inline-flex items-center gap-2 bg-charcoal text-white px-8 py-3.5 rounded-2xl font-medium hover:bg-gray-700 transition-colors">
+      Explore Products
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

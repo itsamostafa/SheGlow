@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% load product_tags %}
+
+{% block title %}Shopping Cart — SheGlow{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 sm:px-6 py-10">
+  <h1 class="font-serif text-3xl font-light text-charcoal mb-8">Shopping Cart
+    {% if items %}<span class="text-lg text-gray-400 font-sans font-normal">({{ items|length }} item{{ items|length|pluralize }})</span>{% endif %}
+  </h1>
+
+  {% if items %}
+  <div class="grid lg:grid-cols-3 gap-8">
+    <!-- Cart items -->
+    <div class="lg:col-span-2 space-y-4">
+      {% for item in items %}
+      <div class="bg-white border border-gray-100 rounded-2xl p-4 flex gap-4" id="cart-item-{{ item.product.id }}">
+        <a href="/product/{{ item.product.slug }}/" class="shrink-0 w-20 h-20 rounded-xl overflow-hidden bg-gray-50">
+          {% if item.product.primary_image %}
+          <img src="{{ item.product.primary_image.image.url }}" alt="{{ item.product.name }}" class="w-full h-full object-cover" />
+          {% else %}
+          <div class="w-full h-full flex items-center justify-center text-gray-200">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14"/>
+            </svg>
+          </div>
+          {% endif %}
+        </a>
+
+        <div class="flex-1 min-w-0">
+          <a href="/product/{{ item.product.slug }}/" class="font-medium text-gray-800 text-sm hover:text-rose-500 transition-colors line-clamp-2">{{ item.product.name }}</a>
+          {% if item.product.category %}
+          <p class="text-xs text-gray-400 mt-0.5">{{ item.product.category.name }}</p>
+          {% endif %}
+          <p class="text-rose-500 font-semibold text-sm mt-1">{{ item.product.effective_price|currency }}</p>
+        </div>
+
+        <div class="flex flex-col items-end justify-between">
+          <button onclick="removeFromCart({{ item.product.id }})" class="text-gray-300 hover:text-red-400 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+          <div class="flex items-center border border-gray-200 rounded-lg overflow-hidden">
+            <button onclick="updateQty({{ item.product.id }}, {{ item.quantity }} - 1)" class="px-2.5 py-1.5 text-gray-500 hover:bg-gray-50 text-sm">−</button>
+            <span class="px-2.5 py-1.5 text-sm font-medium border-x border-gray-200 min-w-[32px] text-center">{{ item.quantity }}</span>
+            <button onclick="updateQty({{ item.product.id }}, {{ item.quantity }} + 1)" class="px-2.5 py-1.5 text-gray-500 hover:bg-gray-50 text-sm">+</button>
+          </div>
+          <p class="text-sm font-semibold text-gray-700">{{ item.subtotal|floatformat:0 }} EGP</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Order summary -->
+    <div>
+      <div class="bg-gray-50 rounded-2xl p-6 sticky top-24">
+        <h2 class="font-serif text-xl font-light text-charcoal mb-4">Summary</h2>
+        <div class="space-y-3 text-sm">
+          <div class="flex justify-between text-gray-600">
+            <span>Subtotal</span>
+            <span>{{ subtotal|floatformat:0 }} EGP</span>
+          </div>
+          <div class="flex justify-between text-gray-600">
+            <span>Shipping</span>
+            {% if shipping_fee %}
+            <span>{{ shipping_fee|floatformat:0 }} EGP</span>
+            {% else %}
+            <span class="text-green-600">Free</span>
+            {% endif %}
+          </div>
+          <div class="border-t border-gray-200 pt-3 flex justify-between font-semibold text-gray-800">
+            <span>Total</span>
+            <span>{{ total|floatformat:0 }} EGP</span>
+          </div>
+        </div>
+        <a href="{% url 'orders:checkout' %}" class="block mt-5 bg-charcoal hover:bg-gray-700 text-white text-center py-3.5 rounded-2xl font-medium transition-colors">
+          Proceed to Checkout
+        </a>
+        <a href="/shop/" class="block mt-3 text-center text-sm text-gray-500 hover:text-rose-400 transition-colors">
+          ← Continue Shopping
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {% else %}
+  <!-- Empty cart -->
+  <div class="text-center py-20">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-200 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+    </svg>
+    <h2 class="font-serif text-2xl text-gray-400 mb-2">Your cart is empty</h2>
+    <p class="text-gray-400 text-sm mb-8">Discover our beautiful collection and find something you'll love</p>
+    <a href="/shop/" class="inline-flex items-center gap-2 bg-charcoal text-white px-8 py-3.5 rounded-2xl font-medium hover:bg-gray-700 transition-colors">
+      Start Shopping
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+function removeFromCart(productId) {
+  fetch(`/cart/remove/${productId}/`, {
+    method: 'POST', headers: { 'X-CSRFToken': '{{ csrf_token }}', 'X-Requested-With': 'XMLHttpRequest' }
+  }).then(r => r.json()).then(data => {
+    document.getElementById(`cart-item-${productId}`)?.remove();
+    updateCartBadge(data.cart_count);
+    showToast('Item removed', 'info');
+    if (data.cart_count === 0) location.reload();
+  });
+}
+
+function updateQty(productId, qty) {
+  if (qty <= 0) { removeFromCart(productId); return; }
+  fetch(`/cart/update/${productId}/`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    body: JSON.stringify({ quantity: qty })
+  }).then(r => r.json()).then(data => {
+    updateCartBadge(data.cart_count);
+    location.reload();
+  });
+}
+</script>
+{% endblock %}

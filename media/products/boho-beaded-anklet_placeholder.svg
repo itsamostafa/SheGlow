@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <rect width="400" height="400" fill="#F5EEE6"/>
+  <circle cx="200" cy="200" r="80" fill="none" stroke="#E8C4C4" stroke-width="2"/>
+  <circle cx="200" cy="200" r="60" fill="none" stroke="#E8C4C4" stroke-width="1" stroke-dasharray="5,3"/>
+  <path d="M160 200 Q200 160 240 200 Q200 240 160 200" fill="#E8C4C4" opacity="0.6"/>
+  <text x="200" y="320" text-anchor="middle" font-family="Georgia, serif" font-size="16" fill="#999" font-style="italic">SheGlow</text>
+</svg>

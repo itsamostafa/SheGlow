@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% load product_tags %}
+
+{% block title %}SheGlow — Glow with every detail{% endblock %}
+
+{% block content %}
+
+<!-- Hero Section -->
+<section class="relative min-h-[85vh] flex items-center bg-gradient-to-br from-rose-50 via-pink-50 to-cream overflow-hidden">
+  <div class="absolute inset-0 opacity-20">
+    <div class="absolute top-20 left-20 w-64 h-64 bg-rose-200 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-20 right-20 w-80 h-80 bg-pink-200 rounded-full blur-3xl"></div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-rose-100 rounded-full blur-3xl"></div>
+  </div>
+
+  <div class="relative max-w-7xl mx-auto px-4 sm:px-6 py-20 w-full">
+    <div class="grid lg:grid-cols-2 gap-12 items-center">
+      <div>
+        <p class="text-rose-400 text-sm font-medium uppercase tracking-[0.3em] mb-4">New Collection 2024</p>
+        <h1 class="font-serif text-5xl sm:text-6xl lg:text-7xl font-light leading-tight text-charcoal mb-6">
+          Glow with<br />
+          <em class="italic text-rose-400">every detail</em>
+        </h1>
+        <p class="text-gray-500 text-lg leading-relaxed mb-8 max-w-md">
+          Discover our curated collection of women's hand accessories and chains — crafted to make you shine from every angle.
+        </p>
+        <div class="flex flex-wrap gap-4">
+          <a href="/shop/"
+             class="inline-flex items-center gap-2 bg-charcoal hover:bg-gray-800 text-white px-8 py-4 rounded-2xl font-medium transition-all hover:shadow-lg hover:-translate-y-0.5">
+            Shop Now
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+            </svg>
+          </a>
+          <a href="/shop/?badge=new"
+             class="inline-flex items-center gap-2 bg-white hover:bg-rose-50 text-gray-700 border border-gray-200 px-8 py-4 rounded-2xl font-medium transition-all hover:-translate-y-0.5">
+            New Arrivals
+          </a>
+        </div>
+
+        <!-- Stats -->
+        <div class="flex gap-8 mt-12">
+          <div>
+            <p class="font-serif text-3xl font-light text-charcoal">100+</p>
+            <p class="text-xs text-gray-400 uppercase tracking-wider mt-1">Products</p>
+          </div>
+          <div class="w-px bg-gray-200"></div>
+          <div>
+            <p class="font-serif text-3xl font-light text-charcoal">27</p>
+            <p class="text-xs text-gray-400 uppercase tracking-wider mt-1">Governorates</p>
+          </div>
+          <div class="w-px bg-gray-200"></div>
+          <div>
+            <p class="font-serif text-3xl font-light text-charcoal">★ 5.0</p>
+            <p class="text-xs text-gray-400 uppercase tracking-wider mt-1">Rating</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hero visual -->
+      <div class="hidden lg:flex items-center justify-center">
+        <div class="relative w-[420px] h-[480px]">
+          <div class="absolute inset-0 bg-gradient-to-br from-rose-200 to-pink-100 rounded-[40px] rotate-3 opacity-60"></div>
+          <div class="relative bg-white rounded-[36px] overflow-hidden w-full h-full shadow-2xl flex items-center justify-center">
+            {% if featured.0.primary_image %}
+            <img src="{{ featured.0.primary_image.image.url }}" alt="{{ featured.0.name }}" class="w-full h-full object-cover" />
+            {% else %}
+            <div class="flex flex-col items-center gap-4 text-gray-300 p-8 text-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="0.8" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
+              </svg>
+              <p class="font-serif text-xl text-gray-400">SheGlow Collection</p>
+            </div>
+            {% endif %}
+          </div>
+          <!-- Floating tag -->
+          {% if featured.0 %}
+          <div class="absolute -bottom-4 -left-4 bg-white rounded-2xl shadow-lg p-3 flex items-center gap-3">
+            <div class="w-10 h-10 bg-rose-100 rounded-xl flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+              </svg>
+            </div>
+            <div>
+              <p class="text-xs text-gray-400">Featured</p>
+              <p class="text-sm font-medium text-gray-800 max-w-[100px] truncate">{{ featured.0.name }}</p>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Categories Section -->
+{% if categories %}
+<section class="max-w-7xl mx-auto px-4 sm:px-6 py-16">
+  <div class="flex items-end justify-between mb-8">
+    <div>
+      <p class="text-rose-400 text-xs uppercase tracking-widest mb-2">Browse By</p>
+      <h2 class="font-serif text-3xl font-light text-charcoal">Shop by Category</h2>
+    </div>
+    <a href="/shop/" class="text-sm text-gray-500 hover:text-rose-400 transition-colors hidden sm:block">View all →</a>
+  </div>
+
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-{{ categories|length|default:3 }} gap-4">
+    {% for category in categories %}
+    <a href="/shop/category/{{ category.slug }}/"
+       class="group relative overflow-hidden rounded-2xl aspect-square bg-gradient-to-br from-rose-50 to-pink-100 flex items-end p-5 hover:shadow-lg transition-all duration-300">
+      {% if category.image %}
+      <img src="{{ category.image.url }}" alt="{{ category.name }}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+      <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+      {% else %}
+      <div class="absolute inset-0 opacity-30 bg-gradient-to-br from-rose-300 to-pink-200"></div>
+      <div class="absolute inset-0 flex items-center justify-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-rose-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+        </svg>
+      </div>
+      {% endif %}
+      <div class="relative">
+        <h3 class="{% if category.image %}text-white{% else %}text-charcoal{% endif %} font-medium text-sm">{{ category.name }}</h3>
+        <p class="{% if category.image %}text-gray-200{% else %}text-gray-500{% endif %} text-xs mt-0.5">Shop now →</p>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- New Arrivals / Featured Products -->
+<section class="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-16">
+  <div class="flex items-end justify-between mb-8">
+    <div>
+      <p class="text-rose-400 text-xs uppercase tracking-widest mb-2">Fresh In</p>
+      <h2 class="font-serif text-3xl font-light text-charcoal">New Arrivals</h2>
+    </div>
+    <a href="/shop/?sort=newest" class="text-sm text-gray-500 hover:text-rose-400 transition-colors hidden sm:block">View all →</a>
+  </div>
+
+  {% if new_arrivals %}
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+    {% for product in new_arrivals %}
+    {% include 'products/partials/product_card.html' %}
+    {% endfor %}
+  </div>
+  <div class="text-center mt-10">
+    <a href="/shop/" class="inline-flex items-center gap-2 border border-gray-200 hover:border-rose-300 text-gray-700 hover:text-rose-500 px-8 py-3.5 rounded-2xl font-medium transition-all">
+      Explore All Products
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+      </svg>
+    </a>
+  </div>
+  {% else %}
+  <div class="text-center py-16 text-gray-400">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+    </svg>
+    <p>Products coming soon!</p>
+  </div>
+  {% endif %}
+</section>
+
+<!-- Brand Strip -->
+<section class="bg-charcoal text-white py-12">
+  <div class="max-w-4xl mx-auto px-4 text-center">
+    <p class="font-serif text-4xl font-light italic mb-4">"Glow with every detail"</p>
+    <p class="text-gray-400 text-sm">Premium accessories delivered across all 27 Egyptian governorates</p>
+  </div>
+</section>
+
+<script>
+function addToCart(productId, event) {
+  const btn = event.target;
+  const originalText = btn.textContent;
+  btn.textContent = 'Adding…';
+  btn.disabled = true;
+
+  fetch(`/cart/add/${productId}/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'X-Requested-With': 'XMLHttpRequest',
+    }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      showToast(data.message || 'Added to cart!', 'success');
+      updateCartBadge(data.cart_count);
+    } else {
+      showToast(data.message || 'Error adding to cart', 'error');
+    }
+  })
+  .catch(() => showToast('Something went wrong', 'error'))
+  .finally(() => {
+    btn.textContent = originalText;
+    btn.disabled = false;
+  });
+}
+</script>
+{% endblock %}

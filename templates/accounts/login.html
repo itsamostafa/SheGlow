@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign In — SheGlow{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-rose-50 to-cream flex items-center justify-center px-4 py-16">
+  <div class="w-full max-w-md">
+    <div class="text-center mb-8">
+      <a href="/" class="font-serif text-3xl font-light tracking-widest text-charcoal">She<span class="text-rose-400">Glow</span></a>
+      <h1 class="mt-4 text-xl font-medium text-gray-800">Welcome back</h1>
+      <p class="text-sm text-gray-500 mt-1">Sign in to your SheGlow account</p>
+    </div>
+
+    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% if next %}<input type="hidden" name="next" value="{{ next }}" />{% endif %}
+
+        <div class="mb-4">
+          <label class="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">Email</label>
+          {{ form.username }}
+          {% if form.username.errors %}
+          <p class="text-red-500 text-xs mt-1">{{ form.username.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <div class="mb-6">
+          <label class="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">Password</label>
+          {{ form.password }}
+          {% if form.password.errors %}
+          <p class="text-red-500 text-xs mt-1">{{ form.password.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        {% if form.non_field_errors %}
+        <div class="mb-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+          {{ form.non_field_errors.0 }}
+        </div>
+        {% endif %}
+
+        <button type="submit"
+                class="w-full bg-charcoal hover:bg-gray-700 text-white font-medium py-3.5 rounded-2xl transition-colors">
+          Sign In
+        </button>
+      </form>
+
+      <p class="text-center text-sm text-gray-500 mt-6">
+        Don't have an account?
+        <a href="/accounts/register/" class="text-rose-400 hover:text-rose-500 font-medium">Create one</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

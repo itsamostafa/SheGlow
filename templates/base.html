@@ -1,0 +1,379 @@
+{% load product_tags %}{% load i18n %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}SheGlow — Glow with every detail{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}SheGlow — Premium women's hand accessories & chains in Egypt. Bracelets, necklaces, rings, anklets & more.{% endblock %}" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="SheGlow" />
+  <meta property="og:title" content="{% block og_title %}SheGlow — Glow with every detail{% endblock %}" />
+  <meta property="og:description" content="{% block og_description %}Premium women's hand accessories & chains{% endblock %}" />
+  {% block og_image %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}/static/images/og-default.jpg" />{% endblock %}
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23f87171'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='20' font-family='serif'>✦</text></svg>" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'rose-blush': '#E8C4C4',
+            'cream': '#FAF5F0',
+            'charcoal': '#2D2D2D',
+          },
+          fontFamily: {
+            'serif': ['Cormorant Garamond', 'Georgia', 'serif'],
+            'sans': ['Inter', 'system-ui', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+
+  <!-- Alpine.js -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .font-serif { font-family: 'Cormorant Garamond', serif; }
+    .badge-new { background: #10b981; color: white; }
+    .badge-sale { background: #ef4444; color: white; }
+    .badge-bestseller { background: #f59e0b; color: white; }
+    .badge-limited { background: #8b5cf6; color: white; }
+    [x-cloak] { display: none !important; }
+    .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .nav-link { position: relative; }
+    .nav-link::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 1px; background: #E8C4C4; transition: width 0.3s ease; }
+    .nav-link:hover::after { width: 100%; }
+    .product-card:hover .product-image { transform: scale(1.05); }
+    .product-image { transition: transform 0.4s ease; }
+    html { scroll-behavior: smooth; }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-white text-gray-800 antialiased" x-data="{ mobileMenuOpen: false, searchOpen: false }">
+
+  <!-- Toast notifications -->
+  <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Navbar -->
+  <nav class="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-sm" x-data="{ categoriesOpen: false }">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6">
+      <div class="flex items-center justify-between h-16">
+
+        <!-- Mobile menu button -->
+        <button @click="mobileMenuOpen = !mobileMenuOpen" class="lg:hidden p-2 text-gray-600 hover:text-rose-400 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path x-show="!mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"/>
+            <path x-show="mobileMenuOpen" x-cloak stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+
+        <!-- Logo -->
+        <a href="/" class="flex items-center gap-1 shrink-0">
+          <span class="font-serif text-2xl font-light tracking-widest text-charcoal">She<span class="text-rose-400">Glow</span></span>
+        </a>
+
+        <!-- Desktop nav links -->
+        <div class="hidden lg:flex items-center gap-8">
+          <a href="/" class="nav-link text-sm font-medium text-gray-700 hover:text-rose-400 transition-colors">Home</a>
+          <a href="/shop/" class="nav-link text-sm font-medium text-gray-700 hover:text-rose-400 transition-colors">Shop</a>
+
+          <!-- Categories dropdown -->
+          <div class="relative" @mouseenter="categoriesOpen = true" @mouseleave="categoriesOpen = false">
+            <button class="nav-link text-sm font-medium text-gray-700 hover:text-rose-400 transition-colors flex items-center gap-1">
+              Categories
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform" :class="{'rotate-180': categoriesOpen}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </button>
+            <div x-show="categoriesOpen" x-cloak x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" class="absolute top-full left-0 mt-2 w-48 bg-white rounded-2xl shadow-lg border border-gray-100 py-2 z-50">
+              <a href="/shop/" class="block px-4 py-2 text-sm text-gray-700 hover:bg-rose-50 hover:text-rose-500 transition-colors">All Products</a>
+              {% load_categories %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Right icons -->
+        <div class="flex items-center gap-2">
+          <!-- Search -->
+          <button @click="searchOpen = !searchOpen" class="p-2 text-gray-600 hover:text-rose-400 transition-colors" title="Search">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+          </button>
+
+          <!-- Wishlist -->
+          {% if user.is_authenticated %}
+          <a href="/wishlist/" class="p-2 text-gray-600 hover:text-rose-400 transition-colors relative" title="Wishlist">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+            </svg>
+            {% if wishlist_count > 0 %}
+            <span id="wishlist-badge" class="absolute -top-0.5 -right-0.5 bg-rose-400 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-medium">{{ wishlist_count }}</span>
+            {% else %}
+            <span id="wishlist-badge" class="hidden absolute -top-0.5 -right-0.5 bg-rose-400 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-medium"></span>
+            {% endif %}
+          </a>
+          {% endif %}
+
+          <!-- Cart -->
+          <a href="/cart/" class="p-2 text-gray-600 hover:text-rose-400 transition-colors relative" title="Cart">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+            </svg>
+            {% if cart_count > 0 %}
+            <span id="cart-badge" class="absolute -top-0.5 -right-0.5 bg-rose-400 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-medium">{{ cart_count }}</span>
+            {% else %}
+            <span id="cart-badge" class="hidden absolute -top-0.5 -right-0.5 bg-rose-400 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-medium"></span>
+            {% endif %}
+          </a>
+
+          <!-- User -->
+          {% if user.is_authenticated %}
+          <a href="/accounts/profile/" class="p-2 text-gray-600 hover:text-rose-400 transition-colors hidden sm:block" title="Account">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+            </svg>
+          </a>
+          {% else %}
+          <a href="/accounts/login/" class="hidden sm:inline-flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-rose-400 transition-colors px-2">
+            Sign In
+          </a>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Search bar (expanded) -->
+      <div x-show="searchOpen" x-cloak x-transition class="pb-3">
+        <form action="/search/" method="get" class="relative">
+          <input type="text" name="q" placeholder="Search for bracelets, necklaces, rings…" autofocus
+            class="w-full pl-4 pr-10 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 bg-gray-50" />
+          <button type="submit" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-rose-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Mobile menu -->
+    <div x-show="mobileMenuOpen" x-cloak x-transition class="lg:hidden border-t border-gray-100 bg-white">
+      <div class="px-4 py-4 space-y-3">
+        <a href="/" class="block text-sm font-medium text-gray-700 hover:text-rose-400 py-1">Home</a>
+        <a href="/shop/" class="block text-sm font-medium text-gray-700 hover:text-rose-400 py-1">Shop All</a>
+        <div class="border-t border-gray-100 pt-3">
+          <p class="text-xs uppercase tracking-widest text-gray-400 mb-2">Categories</p>
+          {% load_categories_mobile %}
+        </div>
+        <div class="border-t border-gray-100 pt-3 flex flex-col gap-2">
+          {% if user.is_authenticated %}
+          <a href="/accounts/profile/" class="text-sm text-gray-700 hover:text-rose-400">My Account</a>
+          <form method="post" action="/accounts/logout/">{% csrf_token %}<button type="submit" class="text-sm text-gray-500 hover:text-rose-400 text-left">Log Out</button></form>
+          {% else %}
+          <a href="/accounts/login/" class="text-sm text-gray-700 hover:text-rose-400">Sign In</a>
+          <a href="/accounts/register/" class="text-sm text-rose-400 font-medium">Create Account</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Django messages -->
+  {% if messages %}
+  <div class="max-w-7xl mx-auto px-4 pt-3">
+    {% for message in messages %}
+    <div class="flex items-center justify-between px-4 py-3 rounded-xl mb-2 text-sm
+      {% if message.tags == 'success' %}bg-green-50 text-green-800 border border-green-200
+      {% elif message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200
+      {% elif message.tags == 'warning' %}bg-amber-50 text-amber-800 border border-amber-200
+      {% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}"
+      x-data="{ show: true }" x-show="show">
+      <span>{{ message }}</span>
+      <button @click="show = false" class="ml-4 opacity-60 hover:opacity-100">&times;</button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Main content -->
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-charcoal text-gray-300 mt-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-12">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+
+        <!-- Brand -->
+        <div class="lg:col-span-2">
+          <a href="/" class="inline-block mb-4">
+            <span class="font-serif text-3xl font-light tracking-widest text-white">She<span class="text-rose-300">Glow</span></span>
+          </a>
+          <p class="text-sm text-gray-400 leading-relaxed max-w-xs">
+            Premium women's hand accessories & chains. Crafted to make you glow with every detail.
+          </p>
+          <div class="flex items-center gap-4 mt-5">
+            <a href="https://wa.me/{{ WHATSAPP_NUMBER }}?text=Hi%20SheGlow!%20I%20have%20a%20question" target="_blank"
+               class="w-9 h-9 bg-gray-700 hover:bg-green-600 rounded-full flex items-center justify-center transition-colors">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+              </svg>
+            </a>
+            <a href="{{ INSTAGRAM_URL }}" target="_blank"
+               class="w-9 h-9 bg-gray-700 hover:bg-pink-600 rounded-full flex items-center justify-center transition-colors">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div>
+          <h4 class="text-white font-medium text-sm uppercase tracking-widest mb-4">Quick Links</h4>
+          <ul class="space-y-2 text-sm">
+            <li><a href="/shop/" class="hover:text-rose-300 transition-colors">Shop All</a></li>
+            <li><a href="/accounts/profile/" class="hover:text-rose-300 transition-colors">My Account</a></li>
+            <li><a href="/cart/" class="hover:text-rose-300 transition-colors">Cart</a></li>
+            <li><a href="/pages/contact/" class="hover:text-rose-300 transition-colors">Contact Us</a></li>
+          </ul>
+        </div>
+
+        <!-- Policies -->
+        <div>
+          <h4 class="text-white font-medium text-sm uppercase tracking-widest mb-4">Policies</h4>
+          <ul class="space-y-2 text-sm">
+            <li><a href="/pages/privacy-policy/" class="hover:text-rose-300 transition-colors">Privacy Policy</a></li>
+            <li><a href="/pages/refund-policy/" class="hover:text-rose-300 transition-colors">Refund Policy</a></li>
+            <li><a href="/pages/terms/" class="hover:text-rose-300 transition-colors">Terms of Service</a></li>
+            <li><a href="/pages/shipping/" class="hover:text-rose-300 transition-colors">Shipping Policy</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-700 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
+        <p>&copy; {% now "Y" %} SheGlow. All rights reserved.</p>
+        <p>Made with ❤️ for women who glow.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- WhatsApp floating button -->
+  <a href="https://wa.me/{{ WHATSAPP_NUMBER }}?text=Hi%20SheGlow!%20I%20have%20a%20question"
+     target="_blank"
+     class="fixed bottom-6 right-6 z-50 w-13 h-13 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110"
+     title="Chat on WhatsApp" style="width:52px;height:52px;">
+    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+    </svg>
+  </a>
+
+  <!-- Shared JS -->
+  <script>
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const colors = { success: 'bg-green-500', error: 'bg-red-500', info: 'bg-blue-500', warning: 'bg-amber-500' };
+      const toast = document.createElement('div');
+      toast.className = `${colors[type] || colors.success} text-white text-sm px-5 py-3 rounded-xl shadow-lg pointer-events-auto flex items-center gap-3 max-w-xs`;
+      toast.innerHTML = `<span>${message}</span><button onclick="this.parentElement.remove()" class="ml-auto opacity-75 hover:opacity-100 text-lg leading-none">&times;</button>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
+
+    function updateCartBadge(count) {
+      const badge = document.getElementById('cart-badge');
+      if (!badge) return;
+      if (count > 0) { badge.textContent = count; badge.classList.remove('hidden'); }
+      else badge.classList.add('hidden');
+    }
+
+    function updateWishlistBadge(count) {
+      const badge = document.getElementById('wishlist-badge');
+      if (!badge) return;
+      if (count > 0) { badge.textContent = count; badge.classList.remove('hidden'); }
+      else badge.classList.add('hidden');
+    }
+
+    function getCsrf() {
+      const match = document.cookie.match(/csrftoken=([^;]+)/);
+      return match ? match[1] : '{{ csrf_token }}';
+    }
+
+    function addToCart(productId, event) {
+      const btn = event.currentTarget;
+      const span = btn.querySelector('span') || btn;
+      const orig = span.textContent;
+      span.textContent = '…';
+      btn.disabled = true;
+      fetch(`/cart/add/${productId}/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCsrf(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quantity: 1 })
+      })
+      .then(r => r.json())
+      .then(data => {
+        showToast(data.message, data.success ? 'success' : 'error');
+        if (data.success) updateCartBadge(data.cart_count);
+      })
+      .catch(() => showToast('Something went wrong', 'error'))
+      .finally(() => { span.textContent = orig; btn.disabled = false; });
+    }
+
+    function toggleWishlist(productId, btn) {
+      fetch(`/wishlist/toggle/${productId}/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCsrf() }
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.redirect) { window.location = data.redirect; return; }
+        const inWishlist = data.in_wishlist;
+        if (btn) {
+          // Card button mode
+          const heart = btn.querySelector('svg');
+          if (heart) heart.setAttribute('fill', inWishlist ? 'currentColor' : 'none');
+          if (inWishlist) {
+            btn.classList.remove('border-gray-200', 'text-gray-400');
+            btn.classList.add('border-rose-300', 'bg-rose-50', 'text-rose-500');
+          } else {
+            btn.classList.remove('border-rose-300', 'bg-rose-50', 'text-rose-500');
+            btn.classList.add('border-gray-200', 'text-gray-400');
+          }
+        } else {
+          // Detail page button mode
+          const detailBtn = document.getElementById('wishlist-btn');
+          if (detailBtn) {
+            const heart = detailBtn.querySelector('svg');
+            if (heart) heart.setAttribute('fill', inWishlist ? 'currentColor' : 'none');
+            const label = detailBtn.querySelector('.wl-label');
+            if (label) label.textContent = inWishlist ? 'In Wishlist' : 'Save to Wishlist';
+            detailBtn.classList.toggle('text-rose-500', inWishlist);
+            detailBtn.classList.toggle('border-rose-300', inWishlist);
+          }
+        }
+        updateWishlistBadge(data.wishlist_count);
+        showToast(inWishlist ? 'Added to wishlist!' : 'Removed from wishlist', inWishlist ? 'success' : 'info');
+      })
+      .catch(() => showToast('Something went wrong', 'error'));
+    }
+  </script>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

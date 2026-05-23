@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% load product_tags %}
+
+{% block title %}Order Confirmed — {{ order.order_number }} — SheGlow{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 py-12">
+
+  <!-- Success header -->
+  <div class="text-center mb-10">
+    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-50 mb-4">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+      </svg>
+    </div>
+    <h1 class="font-serif text-3xl font-light text-charcoal mb-2">Order Placed!</h1>
+    <p class="text-gray-500 text-sm">Thank you, <strong>{{ order.full_name }}</strong>. Your order has been received.</p>
+    <p class="mt-2">
+      <span class="inline-block bg-gray-100 text-gray-600 text-sm font-mono px-4 py-1.5 rounded-full">{{ order.order_number }}</span>
+    </p>
+  </div>
+
+  <!-- Payment notice -->
+  {% if order.payment_method == 'instapay' or order.payment_method == 'vodafone_cash' %}
+  <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 text-sm text-amber-800">
+    {% if receipt %}
+    <p class="font-medium">✓ Receipt received — we'll verify your payment and confirm your order shortly.</p>
+    {% else %}
+    <p class="font-medium">Your order is pending payment verification. Please send your receipt via WhatsApp to confirm your order.</p>
+    {% endif %}
+  </div>
+  {% elif order.payment_method == 'cod' %}
+  <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4 mb-6 text-sm text-blue-700">
+    <p class="font-medium">Cash on Delivery — please have the exact amount ready when your order arrives.</p>
+  </div>
+  {% elif order.payment_method == 'paymob' %}
+  <div class="{% if order.payment_status == 'paid' %}bg-green-50 border-green-200 text-green-700{% else %}bg-red-50 border-red-200 text-red-700{% endif %} border rounded-2xl p-4 mb-6 text-sm">
+    <p class="font-medium">{% if order.payment_status == 'paid' %}Payment confirmed via card.{% else %}Card payment is pending. Please try again or contact support.{% endif %}</p>
+  </div>
+  {% endif %}
+
+  <!-- Order summary card -->
+  <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden mb-6">
+    <div class="p-5 border-b border-gray-100 flex items-center justify-between">
+      <h2 class="font-serif text-lg font-light text-charcoal">Order Summary</h2>
+      <span class="text-xs px-3 py-1 rounded-full font-medium
+        {% if order.status == 'delivered' %}bg-green-100 text-green-700
+        {% elif order.status == 'cancelled' %}bg-red-100 text-red-600
+        {% elif order.status == 'shipped' %}bg-blue-100 text-blue-600
+        {% else %}bg-amber-100 text-amber-700{% endif %}">
+        {{ order.get_status_display }}
+      </span>
+    </div>
+
+    <!-- Items -->
+    <div class="divide-y divide-gray-50">
+      {% for item in items %}
+      <div class="flex items-center gap-4 p-4">
+        {% if item.product and item.product.primary_image %}
+        <img src="{{ item.product.primary_image.image.url }}" alt="{{ item.product_name }}" class="w-12 h-12 rounded-lg object-cover shrink-0" />
+        {% else %}
+        <div class="w-12 h-12 rounded-lg bg-gray-100 shrink-0"></div>
+        {% endif %}
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-gray-800">{{ item.product_name }}</p>
+          <p class="text-xs text-gray-400">Qty: {{ item.quantity }} × {{ item.price|floatformat:0 }} EGP</p>
+        </div>
+        <p class="text-sm font-semibold text-gray-700">{{ item.subtotal|floatformat:0 }} EGP</p>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Totals -->
+    <div class="p-5 bg-gray-50 space-y-2 text-sm">
+      <div class="flex justify-between text-gray-600">
+        <span>Subtotal</span>
+        <span>{{ order.subtotal|floatformat:0 }} EGP</span>
+      </div>
+      <div class="flex justify-between text-gray-600">
+        <span>Shipping</span>
+        <span>{{ order.shipping_fee|floatformat:0 }} EGP</span>
+      </div>
+      {% if order.discount_amount %}
+      <div class="flex justify-between text-green-600">
+        <span>Discount{% if order.promo_code %} ({{ order.promo_code.code }}){% endif %}</span>
+        <span>−{{ order.discount_amount|floatformat:0 }} EGP</span>
+      </div>
+      {% endif %}
+      <div class="border-t border-gray-200 pt-2 flex justify-between font-semibold text-gray-800 text-base">
+        <span>Total</span>
+        <span>{{ order.total|floatformat:0 }} EGP</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shipping address -->
+  <div class="bg-white border border-gray-100 rounded-2xl p-5 mb-6">
+    <h2 class="font-serif text-lg font-light text-charcoal mb-3">Delivery Address</h2>
+    <p class="text-sm text-gray-700">{{ order.full_name }}</p>
+    <p class="text-sm text-gray-500">{{ order.address }}</p>
+    <p class="text-sm text-gray-500">{{ order.city }}, {{ order.governorate }}</p>
+    <p class="text-sm text-gray-500 mt-1">{{ order.phone }}</p>
+    <p class="text-sm text-gray-500">{{ order.email }}</p>
+  </div>
+
+  <!-- Actions -->
+  <div class="flex flex-col sm:flex-row gap-3">
+    {% if user.is_authenticated %}
+    <a href="{% url 'orders:order_history' %}" class="flex-1 text-center bg-charcoal hover:bg-gray-700 text-white py-3 rounded-2xl text-sm font-medium transition-colors">
+      View My Orders
+    </a>
+    {% endif %}
+    <a href="{% url 'home' %}" class="flex-1 text-center border border-gray-200 hover:border-gray-300 text-gray-700 py-3 rounded-2xl text-sm font-medium transition-colors">
+      Continue Shopping
+    </a>
+    <a href="https://wa.me/{{ WHATSAPP_NUMBER }}?text=Hi!%20My%20order%20number%20is%20{{ order.order_number }}"
+       target="_blank" rel="noopener"
+       class="flex-1 text-center bg-green-500 hover:bg-green-600 text-white py-3 rounded-2xl text-sm font-medium transition-colors flex items-center justify-center gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.570-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+        <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.528 5.854L0 24l6.335-1.508A11.935 11.935 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.918 0-3.71-.507-5.254-1.389l-.377-.214-3.762.895.956-3.671-.236-.388A9.955 9.955 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+      </svg>
+      WhatsApp Support
+    </a>
+  </div>
+
+</div>
+{% endblock %}

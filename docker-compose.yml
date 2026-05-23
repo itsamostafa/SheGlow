@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sheglow
+      POSTGRES_USER: sheglow
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sheglow_dev}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DJANGO_SETTINGS_MODULE: sheglow.settings.prod
+      DATABASE_URL: postgres://sheglow:${POSTGRES_PASSWORD:-sheglow_dev}@db:5432/sheglow
+    volumes:
+      - media_files:/app/media
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             gunicorn sheglow.wsgi:application --bind 0.0.0.0:8000 --workers 2"
+
+volumes:
+  postgres_data:
+  media_files:

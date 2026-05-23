@@ -1,0 +1,7 @@
+Django>=5.0
+Pillow
+django-environ
+django-cleanup
+whitenoise
+gunicorn
+psycopg2-binary

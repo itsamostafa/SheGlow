@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+{% load product_tags %}
+
+{% block title %}{{ product.name }} — SheGlow{% endblock %}
+{% block meta_description %}{{ product.description|truncatewords:25 }}{% endblock %}
+{% block og_title %}{{ product.name }} — SheGlow{% endblock %}
+{% block og_description %}{{ product.description|truncatewords:25 }}{% endblock %}
+{% if product.primary_image %}
+{% block og_image %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ product.primary_image.image.url }}" />{% endblock %}
+{% endif %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 py-10" x-data="productGallery()">
+
+  <!-- Breadcrumb -->
+  <nav class="text-xs text-gray-400 mb-8 flex items-center gap-2 flex-wrap">
+    <a href="/" class="hover:text-rose-400 transition-colors">Home</a>
+    <span>/</span>
+    <a href="/shop/" class="hover:text-rose-400 transition-colors">Shop</a>
+    {% if product.category %}
+    <span>/</span>
+    <a href="/shop/category/{{ product.category.slug }}/" class="hover:text-rose-400 transition-colors">{{ product.category.name }}</a>
+    {% endif %}
+    <span>/</span>
+    <span class="text-gray-600 truncate max-w-[200px]">{{ product.name }}</span>
+  </nav>
+
+  <div class="grid lg:grid-cols-2 gap-10 lg:gap-16">
+
+    <!-- Image Gallery -->
+    <div>
+      <!-- Main image -->
+      <div class="relative bg-gray-50 rounded-3xl overflow-hidden aspect-square mb-4">
+        {% if images %}
+        <img :src="currentImage" :alt="currentAlt"
+             class="w-full h-full object-cover transition-opacity duration-300"
+             id="main-product-image" />
+        {% if product.badge %}
+        <span class="absolute top-4 left-4 badge-{{ product.badge }} text-xs font-medium px-3 py-1.5 rounded-full capitalize">
+          {{ product.get_badge_display }}
+        </span>
+        {% endif %}
+        {% if product.is_on_sale and product.discount_percentage %}
+        <span class="absolute top-4 right-4 bg-red-500 text-white text-xs font-medium px-2.5 py-1.5 rounded-full">
+          -{{ product.discount_percentage }}%
+        </span>
+        {% endif %}
+        {% else %}
+        <div class="w-full h-full flex items-center justify-center text-gray-200">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Thumbnails -->
+      {% if images.count > 1 %}
+      <div class="flex gap-3 overflow-x-auto pb-2">
+        {% for img in images %}
+        <button @click="setImage('{{ img.image.url }}', '{{ img.alt_text|default:product.name|escapejs }}')"
+                class="shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-colors"
+                :class="currentImage === '{{ img.image.url }}' ? 'border-rose-400' : 'border-transparent hover:border-rose-200'">
+          <img src="{{ img.image.url }}" alt="{{ img.alt_text|default:product.name }}" class="w-full h-full object-cover" />
+        </button>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Product Info -->
+    <div class="flex flex-col">
+      {% if product.category %}
+      <p class="text-rose-400 text-xs uppercase tracking-widest mb-2">{{ product.category.name }}</p>
+      {% endif %}
+
+      <h1 class="font-serif text-3xl sm:text-4xl font-light text-charcoal mb-4 leading-tight">{{ product.name }}</h1>
+
+      <!-- Price -->
+      <div class="flex items-center gap-3 mb-5">
+        <span class="text-2xl font-semibold text-gray-900">{{ product.effective_price|currency }}</span>
+        {% if product.is_on_sale %}
+        <span class="text-gray-400 line-through text-lg">{{ product.price|currency }}</span>
+        <span class="text-sm font-medium text-red-500 bg-red-50 px-2 py-0.5 rounded-full">Save {{ product.discount_percentage }}%</span>
+        {% endif %}
+      </div>
+
+      <!-- Stock status -->
+      {% if product.stock > 0 %}
+      <p class="flex items-center gap-2 text-sm text-green-600 mb-5">
+        <span class="w-2 h-2 bg-green-500 rounded-full inline-block"></span>
+        In stock{% if product.stock <= 5 %} — only {{ product.stock }} left{% endif %}
+      </p>
+      {% else %}
+      <p class="flex items-center gap-2 text-sm text-red-500 mb-5">
+        <span class="w-2 h-2 bg-red-400 rounded-full inline-block"></span>
+        Out of stock
+      </p>
+      {% endif %}
+
+      <!-- Description -->
+      {% if product.description %}
+      <div class="text-gray-600 text-sm leading-relaxed mb-6 border-t border-gray-100 pt-5">
+        {{ product.description|linebreaks }}
+      </div>
+      {% endif %}
+
+      <!-- Quantity + Cart -->
+      {% if product.stock > 0 %}
+      <div class="flex items-center gap-3 mb-4">
+        <div class="flex items-center border border-gray-200 rounded-xl overflow-hidden">
+          <button onclick="adjustQty(-1)" class="px-4 py-3 text-gray-600 hover:bg-gray-50 transition-colors text-lg leading-none">−</button>
+          <input type="number" id="qty-input" value="1" min="1" max="{{ product.stock }}"
+                 class="w-14 text-center py-3 border-x border-gray-200 text-sm font-medium focus:outline-none" />
+          <button onclick="adjustQty(1)" class="px-4 py-3 text-gray-600 hover:bg-gray-50 transition-colors text-lg leading-none">+</button>
+        </div>
+        <button onclick="addToCartWithQty('{{ product.id }}')"
+                id="add-to-cart-btn"
+                class="flex-1 bg-charcoal hover:bg-gray-700 text-white font-medium py-3.5 px-6 rounded-xl transition-all hover:shadow-md">
+          Add to Cart
+        </button>
+      </div>
+      {% endif %}
+
+      <!-- Wishlist -->
+      <div class="flex gap-3 mb-8">
+        {% if user.is_authenticated %}
+        <button onclick="toggleWishlist({{ product.id }})" id="wishlist-btn"
+                class="flex items-center gap-2 text-sm border px-4 py-2.5 rounded-xl transition-all
+                  {% if product.id in wishlist_ids %}text-rose-500 border-rose-300{% else %}text-gray-500 hover:text-rose-400 border-gray-200 hover:border-rose-300{% endif %}">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="{% if product.id in wishlist_ids %}currentColor{% else %}none{% endif %}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+          </svg>
+          <span class="wl-label">{% if product.id in wishlist_ids %}In Wishlist{% else %}Save to Wishlist{% endif %}</span>
+        </button>
+        {% else %}
+        <a href="/accounts/login/?next=/product/{{ product.slug }}/"
+           class="flex items-center gap-2 text-sm text-gray-500 hover:text-rose-400 border border-gray-200 hover:border-rose-300 px-4 py-2.5 rounded-xl transition-all">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+          </svg>
+          Save to Wishlist
+        </a>
+        {% endif %}
+      </div>
+
+      <!-- Shipping info -->
+      <div class="bg-gray-50 rounded-2xl p-4 space-y-3">
+        <div class="flex items-center gap-3 text-sm text-gray-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-rose-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+          </svg>
+          <span>Shipping to all 27 Egyptian governorates</span>
+        </div>
+        <div class="flex items-center gap-3 text-sm text-gray-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-rose-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span>Cash on delivery available</span>
+        </div>
+        <div class="flex items-center gap-3 text-sm text-gray-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-rose-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+          </svg>
+          <span>InstaPay & Vodafone Cash accepted</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Related Products -->
+  {% if related %}
+  <section class="mt-16 border-t border-gray-100 pt-12">
+    <div class="flex items-end justify-between mb-8">
+      <h2 class="font-serif text-2xl font-light text-charcoal">You may also like</h2>
+      {% if product.category %}
+      <a href="/shop/category/{{ product.category.slug }}/" class="text-sm text-gray-500 hover:text-rose-400 transition-colors">View all →</a>
+      {% endif %}
+    </div>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+      {% for p in related %}
+      {% include 'products/partials/product_card.html' with product=p %}
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+</div>
+
+<script>
+function productGallery() {
+  return {
+    {% if images %}
+    currentImage: '{{ images.0.image.url }}',
+    currentAlt: '{{ images.0.alt_text|default:product.name|escapejs }}',
+    {% else %}
+    currentImage: '',
+    currentAlt: '',
+    {% endif %}
+    setImage(url, alt) {
+      this.currentImage = url;
+      this.currentAlt = alt;
+    }
+  }
+}
+
+function adjustQty(delta) {
+  const input = document.getElementById('qty-input');
+  const max = parseInt(input.max) || 99;
+  const newVal = Math.max(1, Math.min(max, parseInt(input.value || 1) + delta));
+  input.value = newVal;
+}
+
+function addToCartWithQty(productId) {
+  const qty = parseInt(document.getElementById('qty-input').value) || 1;
+  const btn = document.getElementById('add-to-cart-btn');
+  const original = btn.textContent;
+  btn.textContent = 'Adding…';
+  btn.disabled = true;
+  fetch(`/cart/add/${productId}/`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    body: JSON.stringify({ quantity: qty })
+  })
+  .then(r => r.json())
+  .then(data => {
+    showToast(data.message || 'Added to cart!', data.success ? 'success' : 'error');
+    if (data.success) updateCartBadge(data.cart_count);
+  })
+  .catch(() => showToast('Something went wrong', 'error'))
+  .finally(() => { btn.textContent = original; btn.disabled = false; });
+}
+
+</script>
+{% endblock %}
