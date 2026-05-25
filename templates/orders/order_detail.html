@@ -13,14 +13,21 @@
       <h1 class="font-serif text-3xl font-light text-charcoal mt-1">Order Detail</h1>
       <p class="font-mono text-sm text-gray-500 mt-0.5">{{ order.order_number }}</p>
     </div>
-    <span class="text-xs px-3 py-1.5 rounded-full font-medium
-      {% if order.status == 'delivered' %}bg-green-100 text-green-700
-      {% elif order.status == 'cancelled' %}bg-red-100 text-red-600
-      {% elif order.status == 'shipped' %}bg-blue-100 text-blue-600
-      {% elif order.status == 'confirmed' or order.status == 'processing' %}bg-purple-100 text-purple-600
-      {% else %}bg-amber-100 text-amber-700{% endif %}">
-      {{ order.get_status_display }}
-    </span>
+    <div class="flex items-center gap-3">
+      <a href="{% url 'orders:order_invoice_pdf' order.order_number %}"
+         target="_blank"
+         class="text-xs text-rose-400 hover:text-rose-500 border border-rose-200 hover:border-rose-400 px-3 py-1.5 rounded-xl transition-colors">
+        Download Invoice
+      </a>
+      <span class="text-xs px-3 py-1.5 rounded-full font-medium
+        {% if order.status == 'delivered' %}bg-green-100 text-green-700
+        {% elif order.status == 'cancelled' %}bg-red-100 text-red-600
+        {% elif order.status == 'shipped' %}bg-blue-100 text-blue-600
+        {% elif order.status == 'confirmed' or order.status == 'processing' %}bg-purple-100 text-purple-600
+        {% else %}bg-amber-100 text-amber-700{% endif %}">
+        {{ order.get_status_display }}
+      </span>
+    </div>
   </div>
 
   <!-- Status progress bar (only for non-cancelled orders) -->

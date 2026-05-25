@@ -4,6 +4,19 @@ from django.utils import timezone
 from products.models import Product
 
 
+class ShippingZone(models.Model):
+    governorate = models.CharField(max_length=50, unique=True)
+    shipping_fee = models.DecimalField(max_digits=8, decimal_places=2)
+    delivery_days = models.PositiveSmallIntegerField(default=3)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['governorate']
+
+    def __str__(self):
+        return f"{self.governorate} — {self.shipping_fee} EGP"
+
+
 class Cart(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
@@ -112,7 +125,7 @@ class Order(models.Model):
 
     # Shipping snapshot
     full_name = models.CharField(max_length=200)
-    email = models.EmailField()
+    email = models.EmailField(blank=True, default='')
     phone = models.CharField(max_length=20)
     address = models.TextField()
     city = models.CharField(max_length=100)

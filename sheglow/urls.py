@@ -1,15 +1,23 @@
 from django.contrib import admin
+from django.http import HttpResponse
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from accounts import views as accounts_views
 
+
+def favicon(request):
+    return HttpResponse(status=204)
+
+
 urlpatterns = [
+    path('favicon.ico', favicon),
     path('admin/', admin.site.urls),
     path('', include('products.urls')),
     path('accounts/', include('accounts.urls')),
     path('pages/', include('pages.urls')),
     path('', include('orders.urls')),
+    path('admin-panel/', include('analytics.urls')),
     path('wishlist/', accounts_views.wishlist_view, name='wishlist'),
     path('wishlist/toggle/<int:product_id>/', accounts_views.wishlist_toggle, name='wishlist_toggle'),
 ]

@@ -1,3 +1,4 @@
+import io
 import json
 import hashlib
 import hmac
@@ -14,7 +15,7 @@ from django.views.decorators.http import require_POST
 
 from products.models import Product
 from accounts.models import Customer, EGYPTIAN_GOVERNORATES
-from .models import Cart, CartItem, PromoCode, Order, OrderItem, PaymentReceipt
+from .models import Cart, CartItem, PromoCode, Order, OrderItem, PaymentReceipt, ShippingZone
 
 
 # ─────────────────────────── CART HELPERS ───────────────────────────────────
@@ -166,6 +167,32 @@ def apply_promo(request):
     })
 
 
+# ─────────────────────────── SHIPPING FEES ───────────────────────────────────
+
+def get_shipping_fee(governorate):
+    """Return the shipping fee for a governorate, falling back to settings default."""
+    if governorate:
+        try:
+            zone = ShippingZone.objects.get(governorate=governorate, is_active=True)
+            return zone.shipping_fee
+        except ShippingZone.DoesNotExist:
+            pass
+    return Decimal(str(settings.DEFAULT_SHIPPING_FEE))
+
+
+def shipping_fee_api(request):
+    governorate = request.GET.get('governorate', '').strip()
+    fee = get_shipping_fee(governorate)
+    delivery_days = None
+    if governorate:
+        try:
+            zone = ShippingZone.objects.get(governorate=governorate, is_active=True)
+            delivery_days = zone.delivery_days
+        except ShippingZone.DoesNotExist:
+            pass
+    return JsonResponse({'fee': str(fee), 'delivery_days': delivery_days})
+
+
 # ─────────────────────────── CHECKOUT ────────────────────────────────────────
 
 def checkout_view(request):
@@ -184,7 +211,6 @@ def checkout_view(request):
         return redirect('orders:cart')
 
     subtotal = sum(item.subtotal for item in items)
-    shipping_fee = Decimal(str(settings.DEFAULT_SHIPPING_FEE))
 
     # Pre-fill from customer profile
     values = {
@@ -194,18 +220,20 @@ def checkout_view(request):
     }
     if request.user.is_authenticated:
         values['full_name'] = request.user.get_full_name()
-        values['email'] = request.user.email
+        values['email'] = request.user.email or ''
+        values['phone'] = request.user.phone or ''
         try:
             c = request.user.customer
-            values['phone'] = c.phone or ''
             values['address'] = c.address or ''
             values['city'] = c.city or ''
             values['governorate'] = c.governorate or ''
         except Exception:
             pass
 
+    shipping_fee = get_shipping_fee(values['governorate'])
+
     if request.method == 'POST':
-        return _process_checkout(request, cart, items, subtotal, shipping_fee)
+        return _process_checkout(request, cart, items, subtotal)
 
     return render(request, 'orders/checkout.html', {
         'items': items,
@@ -221,13 +249,13 @@ def checkout_view(request):
     })
 
 
-def _process_checkout(request, cart, items, subtotal, shipping_fee):
+def _process_checkout(request, cart, items, subtotal):
     """Handle checkout form POST — validate, create order, clear cart."""
     post = request.POST
     errors = {}
 
-    # Validate required fields
-    required = ['full_name', 'email', 'phone', 'address', 'city', 'governorate', 'payment_method']
+    # Validate required fields (email is optional)
+    required = ['full_name', 'phone', 'address', 'city', 'governorate', 'payment_method']
     for field in required:
         if not post.get(field, '').strip():
             errors[field] = 'This field is required.'
@@ -242,6 +270,9 @@ def _process_checkout(request, cart, items, subtotal, shipping_fee):
     receipt_file = request.FILES.get('receipt_image')
     if payment_method in ('instapay', 'vodafone_cash') and not receipt_file:
         errors['receipt_image'] = 'Please upload your payment receipt.'
+
+    # Compute shipping fee from governorate (live update)
+    shipping_fee = get_shipping_fee(post.get('governorate', '').strip())
 
     if errors:
         all_items = list(cart.items.select_related('product').prefetch_related('product__images').all())
@@ -333,7 +364,6 @@ def _process_checkout(request, cart, items, subtotal, shipping_fee):
     # Save address to profile if requested
     if request.user.is_authenticated and post.get('save_address'):
         customer, _ = Customer.objects.get_or_create(user=request.user)
-        customer.phone = post['phone'].strip()
         customer.address = post['address'].strip()
         customer.city = post['city'].strip()
         customer.governorate = post['governorate'].strip()
@@ -488,6 +518,151 @@ def order_confirmation(request, order_number):
         'items': items,
         'receipt': receipt,
     })
+
+
+@login_required
+def order_invoice_pdf(request, order_number):
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.lib.units import cm
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, HRFlowable
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+
+    order = get_object_or_404(Order, order_number=order_number)
+    if order.user and order.user != request.user and not request.user.is_staff:
+        return redirect('home')
+
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4,
+                            leftMargin=2*cm, rightMargin=2*cm,
+                            topMargin=2*cm, bottomMargin=2*cm)
+
+    styles = getSampleStyleSheet()
+    rose = colors.HexColor('#F43F5E')
+    charcoal = colors.HexColor('#1F2937')
+    light_rose = colors.HexColor('#FFF0F3')
+
+    title_style = ParagraphStyle('Title', parent=styles['Normal'],
+                                 fontSize=28, textColor=rose,
+                                 fontName='Helvetica-Bold', spaceAfter=2)
+    subtitle_style = ParagraphStyle('Sub', parent=styles['Normal'],
+                                    fontSize=9, textColor=colors.gray)
+    label_style = ParagraphStyle('Label', parent=styles['Normal'],
+                                 fontSize=8, textColor=colors.gray,
+                                 fontName='Helvetica-Bold', spaceBefore=8)
+    value_style = ParagraphStyle('Value', parent=styles['Normal'],
+                                 fontSize=9, textColor=charcoal)
+    right_style = ParagraphStyle('Right', parent=styles['Normal'],
+                                 fontSize=9, alignment=TA_RIGHT)
+    bold_right = ParagraphStyle('BoldRight', parent=styles['Normal'],
+                                fontSize=10, alignment=TA_RIGHT,
+                                fontName='Helvetica-Bold', textColor=charcoal)
+
+    story = []
+
+    # Header
+    story.append(Paragraph('SheGlow', title_style))
+    story.append(Paragraph('Beauty & Skincare', subtitle_style))
+    story.append(Spacer(1, 0.4*cm))
+    story.append(HRFlowable(width='100%', thickness=1, color=rose))
+    story.append(Spacer(1, 0.3*cm))
+
+    # Invoice meta (two-column)
+    meta_data = [
+        [Paragraph('INVOICE', ParagraphStyle('inv', parent=styles['Normal'],
+                                              fontSize=14, fontName='Helvetica-Bold', textColor=charcoal)),
+         Paragraph(f'Order: {order.order_number}', right_style)],
+        [Paragraph(f'Date: {order.created_at.strftime("%d %B %Y")}', value_style),
+         Paragraph(f'Status: {order.get_status_display()}', right_style)],
+    ]
+    meta_table = Table(meta_data, colWidths=['50%', '50%'])
+    meta_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+    ]))
+    story.append(meta_table)
+    story.append(Spacer(1, 0.5*cm))
+
+    # Shipping info
+    story.append(Paragraph('SHIP TO', label_style))
+    story.append(Paragraph(order.full_name, value_style))
+    story.append(Paragraph(order.phone, value_style))
+    if order.email:
+        story.append(Paragraph(order.email, value_style))
+    story.append(Paragraph(f'{order.address}, {order.city}, {order.governorate}', value_style))
+    story.append(Spacer(1, 0.5*cm))
+
+    # Items table
+    story.append(Paragraph('ORDER ITEMS', label_style))
+    story.append(Spacer(1, 0.2*cm))
+    items = list(order.items.all())
+    item_data = [['Product', 'Unit Price', 'Qty', 'Subtotal']]
+    for item in items:
+        item_data.append([
+            item.product_name,
+            f'{item.price:,.0f} EGP',
+            str(item.quantity),
+            f'{item.subtotal:,.0f} EGP',
+        ])
+    item_table = Table(item_data, colWidths=[9*cm, 3*cm, 2*cm, 3*cm])
+    item_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), light_rose),
+        ('TEXTCOLOR', (0, 0), (-1, 0), rose),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#FFF8FA')]),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#FFE5E5')),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+        ('TOPPADDING', (0, 0), (-1, -1), 5),
+        ('LEFTPADDING', (0, 0), (-1, -1), 8),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+    ]))
+    story.append(item_table)
+    story.append(Spacer(1, 0.4*cm))
+
+    # Totals
+    totals_data = [
+        ['Subtotal', f'{order.subtotal:,.0f} EGP'],
+        ['Shipping', f'{order.shipping_fee:,.0f} EGP'],
+    ]
+    if order.discount_amount:
+        totals_data.append(['Discount', f'- {order.discount_amount:,.0f} EGP'])
+    totals_data.append(['TOTAL', f'{order.total:,.0f} EGP'])
+    totals_table = Table(totals_data, colWidths=[13*cm, 4*cm])
+    totals_style = [
+        ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('LINEABOVE', (0, -1), (-1, -1), 1, rose),
+        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+        ('TEXTCOLOR', (0, -1), (-1, -1), rose),
+        ('FONTSIZE', (0, -1), (-1, -1), 11),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+    ]
+    totals_table.setStyle(TableStyle(totals_style))
+    story.append(totals_table)
+    story.append(Spacer(1, 0.4*cm))
+
+    # Payment info
+    story.append(Paragraph('PAYMENT', label_style))
+    story.append(Paragraph(f'Method: {order.get_payment_method_display()}', value_style))
+    story.append(Paragraph(f'Status: {order.get_payment_status_display()}', value_style))
+    story.append(Spacer(1, 1*cm))
+
+    # Footer
+    story.append(HRFlowable(width='100%', thickness=0.5, color=colors.HexColor('#FFE5E5')))
+    story.append(Spacer(1, 0.3*cm))
+    story.append(Paragraph('Thank you for shopping with SheGlow ✨',
+                            ParagraphStyle('footer', parent=styles['Normal'],
+                                           fontSize=9, textColor=rose, alignment=TA_CENTER)))
+
+    doc.build(story)
+    buf.seek(0)
+    response = HttpResponse(buf.read(), content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="invoice-{order.order_number}.pdf"'
+    return response
 
 
 @login_required

@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventory Dashboard — SheGlow{% endblock %}
+
+{% block extra_head %}
+<style>
+  .dash-card { background: white; border: 1px solid #FFE5E5; border-radius: 1.25rem; padding: 1.5rem; }
+  .stat-pill { background: linear-gradient(135deg, #FFF0F3, #FFF8F3); border: 1px solid #FFE0E8; border-radius: 1rem; padding: 1.25rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+    <div>
+      <p class="text-xs text-rose-400 uppercase tracking-widest mb-0.5">Admin Panel</p>
+      <h1 class="font-serif text-3xl font-light text-gray-800">Inventory Dashboard</h1>
+    </div>
+    <a href="{% url 'analytics:sales' %}" class="text-sm text-gray-500 hover:text-rose-400 border border-gray-200 px-4 py-2 rounded-xl transition-colors">← Sales</a>
+  </div>
+
+  <!-- KPI Stats -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="stat-pill text-center">
+      <p class="text-2xl font-serif font-light text-gray-800">{{ total_products }}</p>
+      <p class="text-xs text-gray-500 mt-1">Active Products</p>
+    </div>
+    <div class="stat-pill text-center">
+      <p class="text-2xl font-serif font-light text-red-500">{{ out_of_stock|length }}</p>
+      <p class="text-xs text-gray-500 mt-1">Out of Stock</p>
+    </div>
+    <div class="stat-pill text-center">
+      <p class="text-2xl font-serif font-light text-amber-500">{{ low_stock|length }}</p>
+      <p class="text-xs text-gray-500 mt-1">Low Stock (≤{{ low_stock_threshold }})</p>
+    </div>
+    <div class="stat-pill text-center">
+      <p class="text-2xl font-serif font-light text-purple-400">{{ total_stock_value|floatformat:0 }}</p>
+      <p class="text-xs text-gray-500 mt-1">Stock Value (EGP)</p>
+    </div>
+  </div>
+
+  <div class="grid lg:grid-cols-2 gap-6 mb-6">
+
+    <!-- Out of Stock -->
+    <div class="dash-card">
+      <h2 class="font-serif text-lg font-light text-gray-800 flex items-center gap-2 mb-4">
+        <span class="w-2.5 h-2.5 rounded-full bg-red-400 inline-block"></span> Out of Stock
+      </h2>
+      {% if out_of_stock %}
+      <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
+        {% for p in out_of_stock %}
+        <div class="flex items-center justify-between py-1.5">
+          <div class="min-w-0 flex-1">
+            <p class="text-sm text-gray-800 truncate">{{ p.name }}</p>
+            <p class="text-xs text-gray-400">{{ p.category.name|default:"—" }} · {{ p.sku }}</p>
+          </div>
+          <a href="/admin/products/product/{{ p.id }}/change/" target="_blank"
+             class="text-xs text-rose-400 hover:text-rose-500 ml-3 shrink-0">Edit →</a>
+        </div>
+        {% if not forloop.last %}<hr class="border-rose-50">{% endif %}
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-sm text-gray-400">All products are in stock!</p>
+      {% endif %}
+    </div>
+
+    <!-- Low Stock -->
+    <div class="dash-card">
+      <h2 class="font-serif text-lg font-light text-gray-800 flex items-center gap-2 mb-4">
+        <span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span> Low Stock
+      </h2>
+      {% if low_stock %}
+      <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
+        {% for p in low_stock %}
+        <div class="flex items-center justify-between py-1.5">
+          <div class="min-w-0 flex-1">
+            <p class="text-sm text-gray-800 truncate">{{ p.name }}</p>
+            <p class="text-xs text-gray-400">{{ p.category.name|default:"—" }}</p>
+          </div>
+          <div class="flex items-center gap-3 ml-3 shrink-0">
+            <span class="text-sm font-semibold text-amber-600">{{ p.stock }} left</span>
+            <a href="/admin/products/product/{{ p.id }}/change/" target="_blank"
+               class="text-xs text-rose-400 hover:text-rose-500">Edit →</a>
+          </div>
+        </div>
+        {% if not forloop.last %}<hr class="border-rose-50">{% endif %}
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-sm text-gray-400">No products at low stock threshold.</p>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <!-- Best Sellers (last 60 days) -->
+  <div class="dash-card">
+    <h2 class="font-serif text-lg font-light text-gray-800 mb-4">Best Sellers — Last 60 Days</h2>
+    {% if best_sellers %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left text-xs text-gray-400 uppercase border-b border-rose-50">
+            <th class="pb-2 pr-4">#</th>
+            <th class="pb-2 pr-4">Product</th>
+            <th class="pb-2 pr-4 text-right">Units Sold</th>
+            <th class="pb-2 text-right">Current Stock</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-rose-50">
+          {% for item in best_sellers %}
+          <tr>
+            <td class="py-2.5 pr-4 text-gray-400 font-mono text-xs">{{ forloop.counter }}</td>
+            <td class="py-2.5 pr-4 text-gray-800">{{ item.product_name }}</td>
+            <td class="py-2.5 pr-4 text-right font-semibold text-rose-500">{{ item.units_sold }}</td>
+            <td class="py-2.5 text-right">
+              {% if item.stock == 0 %}
+              <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">Out of stock</span>
+              {% elif item.stock <= low_stock_threshold %}
+              <span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">{{ item.stock }} left</span>
+              {% else %}
+              <span class="text-gray-600">{{ item.stock }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-sm text-gray-400">No sales data yet.</p>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

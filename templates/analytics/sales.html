@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+
+{% block title %}Sales Dashboard — SheGlow{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  .dash-card { background: white; border: 1px solid #FFE5E5; border-radius: 1.25rem; padding: 1.5rem; }
+  .stat-pill { background: linear-gradient(135deg, #FFF0F3, #FFF8F3); border: 1px solid #FFE0E8; border-radius: 1rem; padding: 1.25rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 py-10">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+    <div>
+      <p class="text-xs text-rose-400 uppercase tracking-widest mb-0.5">Admin Panel</p>
+      <h1 class="font-serif text-3xl font-light text-gray-800">Sales Dashboard</h1>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="{% url 'analytics:inventory' %}" class="text-sm text-gray-500 hover:text-rose-400 border border-gray-200 px-4 py-2 rounded-xl transition-colors">Inventory →</a>
+      <form method="get" class="flex items-center gap-2">
+        <select name="period" onchange="this.form.submit()"
+                class="text-sm border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-rose-300">
+          <option value="7" {% if period == 7 %}selected{% endif %}>Last 7 days</option>
+          <option value="30" {% if period == 30 %}selected{% endif %}>Last 30 days</option>
+          <option value="90" {% if period == 90 %}selected{% endif %}>Last 90 days</option>
+          <option value="365" {% if period == 365 %}selected{% endif %}>Last year</option>
+        </select>
+      </form>
+    </div>
+  </div>
+
+  <!-- KPI Stats -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="stat-pill text-center">
+      <p class="text-2xl font-serif font-light text-rose-400">{{ total_revenue|floatformat:0 }}</p>
+      <p class="text-xs text-gray-500 mt-1">EGP Revenue</p>
+    </div>
+    <div class="stat-pill text-center">
+      <p class="text-2xl font-serif font-light text-purple-400">{{ total_orders }}</p>
+      <p class="text-xs text-gray-500 mt-1">Orders</p>
+    </div>
+    <div class="stat-pill text-center">
+      <p class="text-2xl font-serif font-light text-amber-400">{{ avg_order_value|floatformat:0 }}</p>
+      <p class="text-xs text-gray-500 mt-1">Avg Order (EGP)</p>
+    </div>
+    <div class="stat-pill text-center">
+      <p class="text-2xl font-serif font-light text-green-400">{{ total_items }}</p>
+      <p class="text-xs text-gray-500 mt-1">Items Sold</p>
+    </div>
+  </div>
+
+  <div class="grid lg:grid-cols-3 gap-6 mb-6">
+
+    <!-- Revenue Chart -->
+    <div class="lg:col-span-2 dash-card">
+      <h2 class="font-serif text-lg font-light text-gray-800 mb-4">Daily Revenue</h2>
+      <canvas id="revenueChart" height="120"></canvas>
+    </div>
+
+    <!-- Payment Method Breakdown -->
+    <div class="dash-card">
+      <h2 class="font-serif text-lg font-light text-gray-800 mb-4">By Payment Method</h2>
+      <canvas id="paymentChart" height="180"></canvas>
+      <div class="mt-4 space-y-2">
+        {% for p in by_payment %}
+        <div class="flex justify-between text-sm">
+          <span class="text-gray-600">
+            {% if p.payment_method == 'cod' %}Cash on Delivery
+            {% elif p.payment_method == 'paymob' %}Visa / Card
+            {% elif p.payment_method == 'instapay' %}InstaPay
+            {% elif p.payment_method == 'vodafone_cash' %}Vodafone Cash
+            {% else %}{{ p.payment_method }}{% endif %}
+          </span>
+          <span class="font-medium text-gray-800">{{ p.revenue|floatformat:0 }} EGP</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="grid lg:grid-cols-2 gap-6">
+
+    <!-- Top Products -->
+    <div class="dash-card">
+      <h2 class="font-serif text-lg font-light text-gray-800 mb-4">Top Products</h2>
+      {% if top_products %}
+      <div class="space-y-3">
+        {% for item in top_products %}
+        <div class="flex items-center justify-between">
+          <div class="flex-1 min-w-0">
+            <p class="text-sm text-gray-800 truncate">{{ item.product_name }}</p>
+            <p class="text-xs text-gray-400">{{ item.units }} units</p>
+          </div>
+          <span class="text-sm font-semibold text-rose-500 ml-3">{{ item.revenue|floatformat:0 }} EGP</span>
+        </div>
+        {% if not forloop.last %}<hr class="border-rose-50 my-1">{% endif %}
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-sm text-gray-400">No sales in this period.</p>
+      {% endif %}
+    </div>
+
+    <!-- Top Governorates -->
+    <div class="dash-card">
+      <h2 class="font-serif text-lg font-light text-gray-800 mb-4">Top Governorates</h2>
+      {% if by_governorate %}
+      <div class="space-y-3">
+        {% for g in by_governorate %}
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm text-gray-800">{{ g.governorate }}</p>
+            <p class="text-xs text-gray-400">{{ g.count }} order{{ g.count|pluralize }}</p>
+          </div>
+          <span class="text-sm font-semibold text-purple-500">{{ g.revenue|floatformat:0 }} EGP</span>
+        </div>
+        {% if not forloop.last %}<hr class="border-rose-50 my-1">{% endif %}
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-sm text-gray-400">No data yet.</p>
+      {% endif %}
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+const dailyData = {{ daily_json|safe }};
+const paymentData = {{ by_payment_json|safe }};
+const paymentLabelsMap = {{ payment_labels_json|safe }};
+
+// Daily revenue line chart
+new Chart(document.getElementById('revenueChart'), {
+  type: 'line',
+  data: {
+    labels: dailyData.map(d => {
+      const date = new Date(d.day);
+      return date.toLocaleDateString('en-EG', {month: 'short', day: 'numeric'});
+    }),
+    datasets: [{
+      label: 'Revenue (EGP)',
+      data: dailyData.map(d => parseFloat(d.revenue)),
+      borderColor: '#F43F5E',
+      backgroundColor: 'rgba(244,63,94,0.08)',
+      tension: 0.4,
+      fill: true,
+      pointRadius: 3,
+      pointBackgroundColor: '#F43F5E',
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, grid: { color: '#FFF0F3' } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+
+// Payment method doughnut
+new Chart(document.getElementById('paymentChart'), {
+  type: 'doughnut',
+  data: {
+    labels: paymentData.map(p => paymentLabelsMap[p.payment_method] || p.payment_method),
+    datasets: [{
+      data: paymentData.map(p => parseFloat(p.revenue)),
+      backgroundColor: ['#F43F5E', '#A855F7', '#F59E0B', '#10B981'],
+      borderWidth: 0,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } }
+    },
+    cutout: '65%',
+  }
+});
+</script>
+{% endblock %}

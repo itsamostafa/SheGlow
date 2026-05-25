@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'accounts',
     'orders',
     'pages',
+    'analytics',
 ]
 
 MIDDLEWARE = [

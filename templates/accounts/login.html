@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Sign In — SheGlow{% endblock %}
+{% block title %}Login — SheGlow{% endblock %}
 
 {% block content %}
 <div class="min-h-screen bg-gradient-to-br from-rose-50 to-cream flex items-center justify-center px-4 py-16">
@@ -8,7 +8,7 @@
     <div class="text-center mb-8">
       <a href="/" class="font-serif text-3xl font-light tracking-widest text-charcoal">She<span class="text-rose-400">Glow</span></a>
       <h1 class="mt-4 text-xl font-medium text-gray-800">Welcome back</h1>
-      <p class="text-sm text-gray-500 mt-1">Sign in to your SheGlow account</p>
+      <p class="text-sm text-gray-500 mt-1">Sign in with your phone number</p>
     </div>
 
     <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-8">
@@ -17,19 +17,15 @@
         {% if next %}<input type="hidden" name="next" value="{{ next }}" />{% endif %}
 
         <div class="mb-4">
-          <label class="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">Email</label>
+          <label class="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">Phone Number</label>
           {{ form.username }}
-          {% if form.username.errors %}
-          <p class="text-red-500 text-xs mt-1">{{ form.username.errors.0 }}</p>
-          {% endif %}
+          {% if form.username.errors %}<p class="text-red-500 text-xs mt-1">{{ form.username.errors.0 }}</p>{% endif %}
         </div>
 
         <div class="mb-6">
           <label class="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">Password</label>
           {{ form.password }}
-          {% if form.password.errors %}
-          <p class="text-red-500 text-xs mt-1">{{ form.password.errors.0 }}</p>
-          {% endif %}
+          {% if form.password.errors %}<p class="text-red-500 text-xs mt-1">{{ form.password.errors.0 }}</p>{% endif %}
         </div>
 
         {% if form.non_field_errors %}
@@ -38,16 +34,17 @@
         </div>
         {% endif %}
 
-        <button type="submit"
-                class="w-full bg-charcoal hover:bg-gray-700 text-white font-medium py-3.5 rounded-2xl transition-colors">
-          Sign In
+        <button type="submit" class="w-full bg-charcoal hover:bg-gray-700 text-white font-medium py-3.5 rounded-2xl transition-colors">
+          Login
         </button>
       </form>
 
-      <p class="text-center text-sm text-gray-500 mt-6">
-        Don't have an account?
-        <a href="/accounts/register/" class="text-rose-400 hover:text-rose-500 font-medium">Create one</a>
-      </p>
+      <div class="mt-6 pt-5 border-t border-gray-100 text-center">
+        <p class="text-sm text-gray-500">Don't have an account?</p>
+        <a href="/accounts/register/" class="mt-2 inline-flex w-full items-center justify-center bg-rose-400 hover:bg-rose-500 text-white font-medium py-3 rounded-2xl transition-colors text-sm">
+          Create Account
+        </a>
+      </div>
     </div>
   </div>
 </div>

@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 from django.core.paginator import Paginator
 from django.db.models import Q, Case, When, IntegerField
+from django.http import JsonResponse
 from .models import Product, Category
 
 
@@ -99,6 +100,31 @@ def search(request):
             Q(name__icontains=q) | Q(description__icontains=q) | Q(category__name__icontains=q)
         ).prefetch_related('images').select_related('category')
     return render(request, 'products/search.html', {'products': products, 'q': q})
+
+
+def search_api(request):
+    q = request.GET.get('q', '').strip()
+    if len(q) < 2:
+        return JsonResponse({'results': [], 'q': q})
+    products = Product.objects.filter(
+        is_active=True
+    ).filter(
+        Q(name__icontains=q) | Q(category__name__icontains=q) | Q(sku__icontains=q)
+    ).select_related('category').prefetch_related('images')[:8]
+
+    results = []
+    for p in products:
+        img = p.primary_image
+        results.append({
+            'id': p.id,
+            'name': p.name,
+            'slug': p.slug,
+            'price': str(p.effective_price),
+            'original_price': str(p.price) if p.is_on_sale else None,
+            'image_url': img.image.url if img else None,
+            'category': p.category.name if p.category else '',
+        })
+    return JsonResponse({'results': results, 'q': q})
 
 
 def handler404(request, exception):

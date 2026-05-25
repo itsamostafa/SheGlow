@@ -16,48 +16,40 @@
         {% csrf_token %}
         <div class="grid grid-cols-2 gap-4 mb-4">
           <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">First Name</label>
+            <label class="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">First Name *</label>
             {{ form.first_name }}
-            {% if form.first_name.errors %}
-            <p class="text-red-500 text-xs mt-1">{{ form.first_name.errors.0 }}</p>
-            {% endif %}
+            {% if form.first_name.errors %}<p class="text-red-500 text-xs mt-1">{{ form.first_name.errors.0 }}</p>{% endif %}
           </div>
           <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">Last Name</label>
+            <label class="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">Last Name *</label>
             {{ form.last_name }}
-            {% if form.last_name.errors %}
-            <p class="text-red-500 text-xs mt-1">{{ form.last_name.errors.0 }}</p>
-            {% endif %}
+            {% if form.last_name.errors %}<p class="text-red-500 text-xs mt-1">{{ form.last_name.errors.0 }}</p>{% endif %}
           </div>
         </div>
 
         <div class="mb-4">
-          <label class="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">Email</label>
-          {{ form.email }}
-          {% if form.email.errors %}
-          <p class="text-red-500 text-xs mt-1">{{ form.email.errors.0 }}</p>
-          {% endif %}
-        </div>
-
-        <div class="mb-4">
-          <label class="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">Phone (optional)</label>
+          <label class="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">Phone Number *</label>
+          <p class="text-xs text-gray-400 mb-1.5">Used to log in — Egyptian mobile (01XXXXXXXXX)</p>
           {{ form.phone }}
+          {% if form.phone.errors %}<p class="text-red-500 text-xs mt-1">{{ form.phone.errors.0 }}</p>{% endif %}
         </div>
 
         <div class="mb-4">
-          <label class="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">Password</label>
+          <label class="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">Email <span class="text-gray-400 normal-case font-normal">(optional)</span></label>
+          {{ form.email }}
+          {% if form.email.errors %}<p class="text-red-500 text-xs mt-1">{{ form.email.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">Password *</label>
           {{ form.password1 }}
-          {% if form.password1.errors %}
-          <p class="text-red-500 text-xs mt-1">{{ form.password1.errors.0 }}</p>
-          {% endif %}
+          {% if form.password1.errors %}<p class="text-red-500 text-xs mt-1">{{ form.password1.errors.0 }}</p>{% endif %}
         </div>
 
         <div class="mb-6">
-          <label class="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">Confirm Password</label>
+          <label class="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">Confirm Password *</label>
           {{ form.password2 }}
-          {% if form.password2.errors %}
-          <p class="text-red-500 text-xs mt-1">{{ form.password2.errors.0 }}</p>
-          {% endif %}
+          {% if form.password2.errors %}<p class="text-red-500 text-xs mt-1">{{ form.password2.errors.0 }}</p>{% endif %}
         </div>
 
         {% if form.non_field_errors %}
@@ -66,15 +58,14 @@
         </div>
         {% endif %}
 
-        <button type="submit"
-                class="w-full bg-charcoal hover:bg-gray-700 text-white font-medium py-3.5 rounded-2xl transition-colors">
+        <button type="submit" class="w-full bg-charcoal hover:bg-gray-700 text-white font-medium py-3.5 rounded-2xl transition-colors">
           Create Account
         </button>
       </form>
 
       <p class="text-center text-sm text-gray-500 mt-6">
         Already have an account?
-        <a href="/accounts/login/" class="text-rose-400 hover:text-rose-500 font-medium">Sign in</a>
+        <a href="/accounts/login/" class="text-rose-400 hover:text-rose-500 font-medium">Login</a>
       </p>
     </div>
   </div>

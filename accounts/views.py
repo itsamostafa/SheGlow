@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db.models import Sum
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from .forms import RegisterForm, LoginForm, ProfileForm
@@ -18,17 +19,15 @@ def register_view(request):
             user = form.save(commit=False)
             user.first_name = form.cleaned_data['first_name']
             user.last_name = form.cleaned_data['last_name']
+            user.email = form.cleaned_data.get('email') or None
             user.save()
-            Customer.objects.get_or_create(
-                user=user,
-                defaults={'phone': form.cleaned_data.get('phone', '')}
-            )
+            Customer.objects.get_or_create(user=user)
             session_key = request.session.session_key
             login(request, user)
             if session_key:
                 from orders.views import merge_carts
                 merge_carts(user, session_key)
-            messages.success(request, f'Welcome to SheGlow, {user.first_name}!')
+            messages.success(request, f'Welcome to SheGlow, {user.first_name or user.phone}!')
             return redirect('home')
     else:
         form = RegisterForm()
@@ -48,7 +47,7 @@ def login_view(request):
             if session_key:
                 from orders.views import merge_carts
                 merge_carts(user, session_key)
-            messages.success(request, f'Welcome back, {user.first_name or user.email}!')
+            messages.success(request, f'Welcome back, {user.first_name or user.phone}!')
             return redirect(next_url or 'home')
     else:
         form = LoginForm()
@@ -88,6 +87,8 @@ def profile_view(request):
         if form.is_valid():
             request.user.first_name = form.cleaned_data['first_name']
             request.user.last_name = form.cleaned_data['last_name']
+            email = form.cleaned_data.get('email') or None
+            request.user.email = email
             request.user.save()
             form.save()
             messages.success(request, 'Profile updated successfully!')
@@ -96,5 +97,19 @@ def profile_view(request):
         form = ProfileForm(instance=customer, initial={
             'first_name': request.user.first_name,
             'last_name': request.user.last_name,
+            'email': request.user.email or '',
         })
-    return render(request, 'accounts/profile.html', {'form': form, 'customer': customer})
+    from orders.models import Order
+    orders = Order.objects.filter(user=request.user)
+    active_statuses = ['pending', 'confirmed', 'processing', 'shipped']
+    total_spent = orders.filter(status__in=['delivered', 'confirmed']).aggregate(t=Sum('total'))['t'] or 0
+    wishlist_preview = Wishlist.objects.filter(user=request.user).select_related('product').prefetch_related('product__images')[:4]
+    return render(request, 'accounts/profile.html', {
+        'form': form,
+        'customer': customer,
+        'order_count': orders.count(),
+        'active_order_count': orders.filter(status__in=active_statuses).count(),
+        'recent_orders': orders.prefetch_related('items')[:5],
+        'total_spent': total_spent,
+        'wishlist_preview': wishlist_preview,
+    })

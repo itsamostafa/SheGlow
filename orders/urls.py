@@ -10,8 +10,10 @@ urlpatterns = [
     path('cart/update/<int:product_id>/', views.update_cart, name='update_cart'),
     path('checkout/', views.checkout_view, name='checkout'),
     path('checkout/apply-promo/', views.apply_promo, name='apply_promo'),
+    path('checkout/shipping-fee/', views.shipping_fee_api, name='shipping_fee_api'),
     path('order/confirmation/<str:order_number>/', views.order_confirmation, name='order_confirmation'),
     path('orders/', views.order_history, name='order_history'),
     path('orders/<str:order_number>/', views.order_detail, name='order_detail'),
+    path('orders/<str:order_number>/invoice/', views.order_invoice_pdf, name='order_invoice_pdf'),
     path('payment/paymob-callback/', views.paymob_callback, name='paymob_callback'),
 ]
