@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 from django.utils.text import slugify
 
 
@@ -97,3 +98,19 @@ class ProductImage(models.Model):
         if self.is_primary:
             ProductImage.objects.filter(product=self.product, is_primary=True).exclude(pk=self.pk).update(is_primary=False)
         super().save(*args, **kwargs)
+
+
+class Review(models.Model):
+    product    = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
+    user       = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reviews')
+    rating     = models.PositiveSmallIntegerField(choices=[(i, i) for i in range(1, 6)])
+    body       = models.TextField(blank=True)
+    is_approved = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('product', 'user')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user} — {self.product.name} ({self.rating}★)"

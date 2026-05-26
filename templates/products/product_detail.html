@@ -168,6 +168,90 @@
     </div>
   </div>
 
+  <!-- Reviews -->
+  <section class="mt-16 border-t border-gray-100 pt-12" id="reviews">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <div>
+        <h2 class="font-serif text-2xl font-light text-charcoal">Customer Reviews</h2>
+        {% if review_count %}
+        <div class="flex items-center gap-2 mt-1">
+          <div class="flex text-amber-400 text-sm">
+            {% for i in "12345" %}
+            <span>{% if forloop.counter <= avg_rating|floatformat:0|add:0 %}★{% else %}☆{% endif %}</span>
+            {% endfor %}
+          </div>
+          <span class="text-sm text-gray-500">{{ avg_rating|floatformat:1 }} out of 5 ({{ review_count }} review{{ review_count|pluralize }})</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Write a review -->
+    {% if user.is_authenticated and user_purchased and not user_review %}
+    <div class="bg-rose-50 border border-rose-100 rounded-2xl p-6 mb-8">
+      <h3 class="font-medium text-gray-800 mb-4">Share your experience</h3>
+      <form method="post" action="{% url 'submit_review' product.slug %}">
+        {% csrf_token %}
+        <!-- Star picker -->
+        <div class="flex gap-1 mb-4" x-data="{ rating: 0, hover: 0 }">
+          {% for i in "12345" %}
+          <button type="button"
+                  @click="rating = {{ forloop.counter }}"
+                  @mouseenter="hover = {{ forloop.counter }}"
+                  @mouseleave="hover = 0"
+                  class="text-2xl transition-colors"
+                  :class="(hover || rating) >= {{ forloop.counter }} ? 'text-amber-400' : 'text-gray-300'">★</button>
+          {% endfor %}
+          <input type="hidden" name="rating" :value="rating" />
+        </div>
+        <textarea name="body" rows="3" placeholder="Tell others what you think about this product..."
+                  class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 resize-none mb-3"></textarea>
+        <button type="submit" class="bg-rose-400 hover:bg-rose-500 text-white text-sm font-medium px-6 py-2.5 rounded-xl transition-colors">
+          Submit Review
+        </button>
+      </form>
+    </div>
+    {% elif user_review %}
+    <div class="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 mb-6 text-sm text-amber-700">
+      {% if user_review.is_approved %}Your review is published below.
+      {% else %}Your review is awaiting approval.{% endif %}
+    </div>
+    {% elif not user.is_authenticated %}
+    <div class="bg-gray-50 rounded-2xl p-5 mb-6 text-center">
+      <p class="text-sm text-gray-500 mb-2">Purchased this item?</p>
+      <a href="/accounts/login/?next=/product/{{ product.slug }}/#reviews"
+         class="text-sm text-rose-400 hover:text-rose-500 font-medium transition-colors">Log in to leave a review →</a>
+    </div>
+    {% endif %}
+
+    <!-- Reviews list -->
+    {% if reviews %}
+    <div class="space-y-5">
+      {% for review in reviews %}
+      <div class="bg-white border border-gray-100 rounded-2xl p-5">
+        <div class="flex items-start justify-between gap-3 mb-2">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center text-rose-400 text-sm font-medium">
+              {{ review.user.first_name|first|upper|default:review.user.phone|first }}
+            </div>
+            <div>
+              <p class="text-sm font-medium text-gray-800">{{ review.user.get_full_name|default:review.user.phone }}</p>
+              <p class="text-xs text-gray-400">{{ review.created_at|date:"d M Y" }}</p>
+            </div>
+          </div>
+          <div class="text-amber-400 text-sm shrink-0">
+            {% for i in "12345" %}{% if forloop.counter <= review.rating %}★{% else %}☆{% endif %}{% endfor %}
+          </div>
+        </div>
+        {% if review.body %}<p class="text-sm text-gray-600 leading-relaxed">{{ review.body }}</p>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-sm text-gray-400 text-center py-8">No reviews yet. Be the first!</p>
+    {% endif %}
+  </section>
+
   <!-- Related Products -->
   {% if related %}
   <section class="mt-16 border-t border-gray-100 pt-12">

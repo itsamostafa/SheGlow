@@ -10,46 +10,100 @@
   </h1>
 
   {% if items %}
-  <div class="grid lg:grid-cols-3 gap-8">
+  <div class="grid lg:grid-cols-3 gap-8"
+       x-data="{
+         items: {{ cart_items_json|safe }},
+         csrf: '{{ csrf_token }}',
+         removing: null,
+         get subtotal() { return this.items.reduce((s, i) => s + i.price * i.qty, 0); },
+         get shipping() { return this.subtotal > 0 ? {{ shipping_fee|floatformat:2 }} : 0; },
+         get total() { return this.subtotal + this.shipping; },
+         fmt(n) { return n.toLocaleString('en-EG', {maximumFractionDigits:0}) + ' EGP'; },
+         async setQty(item, qty) {
+           if (qty <= 0) { await this.remove(item); return; }
+           qty = Math.min(qty, item.stock);
+           const prev = item.qty;
+           item.qty = qty;
+           try {
+             const r = await fetch('/cart/update/' + item.id + '/', {
+               method: 'POST',
+               headers: {'X-CSRFToken': this.csrf, 'Content-Type': 'application/json'},
+               body: JSON.stringify({quantity: qty})
+             });
+             const d = await r.json();
+             if (d.success) updateCartBadge(d.cart_count);
+             else { item.qty = prev; showToast('Could not update quantity', 'error'); }
+           } catch { item.qty = prev; showToast('Something went wrong', 'error'); }
+         },
+         async remove(item) {
+           this.removing = item.id;
+           try {
+             const r = await fetch('/cart/remove/' + item.id + '/', {
+               method: 'POST',
+               headers: {'X-CSRFToken': this.csrf}
+             });
+             const d = await r.json();
+             this.items = this.items.filter(i => i.id !== item.id);
+             updateCartBadge(d.cart_count);
+             showToast('Item removed', 'info');
+           } catch { showToast('Something went wrong', 'error'); }
+           finally { this.removing = null; }
+         }
+       }">
+
     <!-- Cart items -->
     <div class="lg:col-span-2 space-y-4">
-      {% for item in items %}
-      <div class="bg-white border border-gray-100 rounded-2xl p-4 flex gap-4" id="cart-item-{{ item.product.id }}">
-        <a href="/product/{{ item.product.slug }}/" class="shrink-0 w-20 h-20 rounded-xl overflow-hidden bg-gray-50">
-          {% if item.product.primary_image %}
-          <img src="{{ item.product.primary_image.image.url }}" alt="{{ item.product.name }}" class="w-full h-full object-cover" />
-          {% else %}
-          <div class="w-full h-full flex items-center justify-center text-gray-200">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14"/>
-            </svg>
-          </div>
-          {% endif %}
-        </a>
-
-        <div class="flex-1 min-w-0">
-          <a href="/product/{{ item.product.slug }}/" class="font-medium text-gray-800 text-sm hover:text-rose-500 transition-colors line-clamp-2">{{ item.product.name }}</a>
-          {% if item.product.category %}
-          <p class="text-xs text-gray-400 mt-0.5">{{ item.product.category.name }}</p>
-          {% endif %}
-          <p class="text-rose-500 font-semibold text-sm mt-1">{{ item.product.effective_price|currency }}</p>
+      <template x-if="items.length === 0">
+        <div class="text-center py-12">
+          <p class="text-gray-400 text-sm mb-4">Your cart is empty</p>
+          <a href="/shop/" class="text-rose-400 hover:text-rose-500 text-sm">Continue Shopping →</a>
         </div>
+      </template>
 
-        <div class="flex flex-col items-end justify-between">
-          <button onclick="removeFromCart({{ item.product.id }})" class="text-gray-300 hover:text-red-400 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </button>
-          <div class="flex items-center border border-gray-200 rounded-lg overflow-hidden">
-            <button onclick="updateQty({{ item.product.id }}, {{ item.quantity }} - 1)" class="px-2.5 py-1.5 text-gray-500 hover:bg-gray-50 text-sm">−</button>
-            <span class="px-2.5 py-1.5 text-sm font-medium border-x border-gray-200 min-w-[32px] text-center">{{ item.quantity }}</span>
-            <button onclick="updateQty({{ item.product.id }}, {{ item.quantity }} + 1)" class="px-2.5 py-1.5 text-gray-500 hover:bg-gray-50 text-sm">+</button>
+      <template x-for="item in items" :key="item.id">
+        <div class="bg-white border border-gray-100 rounded-2xl p-4 flex gap-4 transition-opacity"
+             :class="removing === item.id ? 'opacity-40' : ''">
+          <a :href="'/product/' + item.slug + '/'" class="shrink-0 w-20 h-20 rounded-xl overflow-hidden bg-gray-50">
+            <img :src="item.image" :alt="item.name" class="w-full h-full object-cover"
+                 x-show="item.image" />
+            <div class="w-full h-full flex items-center justify-center text-gray-200" x-show="!item.image">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14"/>
+              </svg>
+            </div>
+          </a>
+
+          <div class="flex-1 min-w-0">
+            <a :href="'/product/' + item.slug + '/'" class="font-medium text-gray-800 text-sm hover:text-rose-500 transition-colors line-clamp-2" x-text="item.name"></a>
+            <p class="text-xs text-gray-400 mt-0.5" x-text="item.category"></p>
+            <p class="text-rose-500 font-semibold text-sm mt-1" x-text="fmt(item.price)"></p>
           </div>
-          <p class="text-sm font-semibold text-gray-700">{{ item.subtotal|floatformat:0 }} EGP</p>
+
+          <div class="flex flex-col items-end justify-between">
+            <!-- Remove -->
+            <button @click="remove(item)" :disabled="removing === item.id"
+                    class="text-gray-300 hover:text-red-400 transition-colors disabled:opacity-50">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+
+            <!-- Qty stepper -->
+            <div class="flex items-center border border-gray-200 rounded-lg overflow-hidden">
+              <button @click="setQty(item, item.qty - 1)"
+                      :disabled="removing === item.id"
+                      class="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-rose-50 hover:text-rose-400 transition-colors text-base disabled:opacity-40">−</button>
+              <span class="w-8 h-8 flex items-center justify-center text-sm font-medium border-x border-gray-200" x-text="item.qty"></span>
+              <button @click="setQty(item, item.qty + 1)"
+                      :disabled="removing === item.id || item.qty >= item.stock"
+                      class="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-rose-50 hover:text-rose-400 transition-colors text-base disabled:opacity-40">+</button>
+            </div>
+
+            <!-- Item subtotal -->
+            <p class="text-sm font-semibold text-gray-700" x-text="fmt(item.price * item.qty)"></p>
+          </div>
         </div>
-      </div>
-      {% endfor %}
+      </template>
     </div>
 
     <!-- Order summary -->
@@ -59,22 +113,20 @@
         <div class="space-y-3 text-sm">
           <div class="flex justify-between text-gray-600">
             <span>Subtotal</span>
-            <span>{{ subtotal|floatformat:0 }} EGP</span>
+            <span x-text="fmt(subtotal)"></span>
           </div>
           <div class="flex justify-between text-gray-600">
             <span>Shipping</span>
-            {% if shipping_fee %}
-            <span>{{ shipping_fee|floatformat:0 }} EGP</span>
-            {% else %}
-            <span class="text-green-600">Free</span>
-            {% endif %}
+            <span x-text="shipping > 0 ? fmt(shipping) : 'Calculated at checkout'"></span>
           </div>
           <div class="border-t border-gray-200 pt-3 flex justify-between font-semibold text-gray-800">
             <span>Total</span>
-            <span>{{ total|floatformat:0 }} EGP</span>
+            <span x-text="fmt(total)"></span>
           </div>
         </div>
-        <a href="{% url 'orders:checkout' %}" class="block mt-5 bg-charcoal hover:bg-gray-700 text-white text-center py-3.5 rounded-2xl font-medium transition-colors">
+        <a href="{% url 'orders:checkout' %}"
+           class="block mt-5 bg-charcoal hover:bg-gray-700 text-white text-center py-3.5 rounded-2xl font-medium transition-colors"
+           :class="items.length === 0 ? 'opacity-50 pointer-events-none' : ''">
           Proceed to Checkout
         </a>
         <a href="/shop/" class="block mt-3 text-center text-sm text-gray-500 hover:text-rose-400 transition-colors">
@@ -85,7 +137,6 @@
   </div>
 
   {% else %}
-  <!-- Empty cart -->
   <div class="text-center py-20">
     <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-200 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
@@ -98,29 +149,4 @@
   </div>
   {% endif %}
 </div>
-
-<script>
-function removeFromCart(productId) {
-  fetch(`/cart/remove/${productId}/`, {
-    method: 'POST', headers: { 'X-CSRFToken': '{{ csrf_token }}', 'X-Requested-With': 'XMLHttpRequest' }
-  }).then(r => r.json()).then(data => {
-    document.getElementById(`cart-item-${productId}`)?.remove();
-    updateCartBadge(data.cart_count);
-    showToast('Item removed', 'info');
-    if (data.cart_count === 0) location.reload();
-  });
-}
-
-function updateQty(productId, qty) {
-  if (qty <= 0) { removeFromCart(productId); return; }
-  fetch(`/cart/update/${productId}/`, {
-    method: 'POST',
-    headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-    body: JSON.stringify({ quantity: qty })
-  }).then(r => r.json()).then(data => {
-    updateCartBadge(data.cart_count);
-    location.reload();
-  });
-}
-</script>
 {% endblock %}

@@ -1,0 +1,26 @@
+Hi {{ order.full_name }},
+
+Thank you for your order! Here are your order details.
+
+Order Number: {{ order.order_number }}
+Date: {{ order.created_at|date:"d M Y, H:i" }}
+
+ITEMS
+{% for item in order.items.all %}  {{ item.quantity }}x {{ item.product_name }} — {{ item.subtotal }} EGP
+{% endfor %}
+Subtotal:   {{ order.subtotal }} EGP
+Shipping:   {{ order.shipping_fee }} EGP
+{% if order.discount_amount %}Discount:   -{{ order.discount_amount }} EGP
+{% endif %}TOTAL:      {{ order.total }} EGP
+
+Payment:    {{ order.get_payment_method_display }}
+Deliver to: {{ order.address }}, {{ order.city }}, {{ order.governorate }}
+
+{% if order.payment_method == 'cod' %}Payment is due on delivery. Please have the exact amount ready.
+{% elif order.payment_method in 'instapay,vodafone_cash' %}Your receipt is under review. We'll confirm shortly.
+{% endif %}
+Track your order: {{ protocol }}://{{ domain }}/orders/{{ order.order_number }}/
+
+Questions? Reply to this email or reach us on WhatsApp.
+
+Thank you for shopping with SheGlow ✨

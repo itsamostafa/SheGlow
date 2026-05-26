@@ -6,25 +6,55 @@
 {% block content %}
 
 <!-- Hero Section -->
-<section class="relative min-h-[85vh] flex items-center bg-gradient-to-br from-rose-50 via-pink-50 to-cream overflow-hidden">
+{% with b=hero_banner %}
+<section class="relative min-h-[85vh] flex items-center overflow-hidden
+  {% if b and b.image %}bg-gray-900{% else %}bg-gradient-to-br from-rose-50 via-pink-50 to-cream{% endif %}">
+
+  {% if b and b.image %}
+  <img src="{{ b.image.url }}" alt="{{ b.title }}"
+       class="absolute inset-0 w-full h-full object-cover opacity-40" />
+  {% else %}
   <div class="absolute inset-0 opacity-20">
     <div class="absolute top-20 left-20 w-64 h-64 bg-rose-200 rounded-full blur-3xl"></div>
     <div class="absolute bottom-20 right-20 w-80 h-80 bg-pink-200 rounded-full blur-3xl"></div>
     <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-rose-100 rounded-full blur-3xl"></div>
   </div>
+  {% endif %}
 
   <div class="relative max-w-7xl mx-auto px-4 sm:px-6 py-20 w-full">
     <div class="grid lg:grid-cols-2 gap-12 items-center">
       <div>
-        <p class="text-rose-400 text-sm font-medium uppercase tracking-[0.3em] mb-4">New Collection 2024</p>
-        <h1 class="font-serif text-5xl sm:text-6xl lg:text-7xl font-light leading-tight text-charcoal mb-6">
-          Glow with<br />
-          <em class="italic text-rose-400">every detail</em>
-        </h1>
-        <p class="text-gray-500 text-lg leading-relaxed mb-8 max-w-md">
-          Discover our curated collection of women's hand accessories and chains — crafted to make you shine from every angle.
+        <p class="text-rose-400 text-sm font-medium uppercase tracking-[0.3em] mb-4">
+          {% if b and b.badge_text %}{{ b.badge_text }}{% else %}New Collection 2025{% endif %}
         </p>
+        <h1 class="font-serif text-5xl sm:text-6xl lg:text-7xl font-light leading-tight mb-6
+          {% if b and b.image %}text-white{% else %}text-charcoal{% endif %}">
+          {% if b %}{{ b.title }}
+          {% else %}Glow with<br /><em class="italic text-rose-400">every detail</em>{% endif %}
+        </h1>
+        {% if b and b.subtitle or not b %}
+        <p class="text-lg leading-relaxed mb-8 max-w-md
+          {% if b and b.image %}text-gray-200{% else %}text-gray-500{% endif %}">
+          {% if b and b.subtitle %}{{ b.subtitle }}
+          {% else %}Discover our curated collection of women's hand accessories and chains — crafted to make you shine from every angle.{% endif %}
+        </p>
+        {% endif %}
         <div class="flex flex-wrap gap-4">
+          {% if b and b.button_text %}
+          <a href="{{ b.button_url|default:'/shop/' }}"
+             class="inline-flex items-center gap-2 bg-charcoal hover:bg-gray-800 text-white px-8 py-4 rounded-2xl font-medium transition-all hover:shadow-lg hover:-translate-y-0.5">
+            {{ b.button_text }}
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+            </svg>
+          </a>
+          {% if b.secondary_button_text %}
+          <a href="{{ b.secondary_button_url|default:'/shop/' }}"
+             class="inline-flex items-center gap-2 bg-white hover:bg-rose-50 text-gray-700 border border-gray-200 px-8 py-4 rounded-2xl font-medium transition-all hover:-translate-y-0.5">
+            {{ b.secondary_button_text }}
+          </a>
+          {% endif %}
+          {% else %}
           <a href="/shop/"
              class="inline-flex items-center gap-2 bg-charcoal hover:bg-gray-800 text-white px-8 py-4 rounded-2xl font-medium transition-all hover:shadow-lg hover:-translate-y-0.5">
             Shop Now
@@ -36,28 +66,30 @@
              class="inline-flex items-center gap-2 bg-white hover:bg-rose-50 text-gray-700 border border-gray-200 px-8 py-4 rounded-2xl font-medium transition-all hover:-translate-y-0.5">
             New Arrivals
           </a>
+          {% endif %}
         </div>
 
         <!-- Stats -->
         <div class="flex gap-8 mt-12">
           <div>
-            <p class="font-serif text-3xl font-light text-charcoal">100+</p>
-            <p class="text-xs text-gray-400 uppercase tracking-wider mt-1">Products</p>
+            <p class="font-serif text-3xl font-light {% if b and b.image %}text-white{% else %}text-charcoal{% endif %}">100+</p>
+            <p class="text-xs uppercase tracking-wider mt-1 {% if b and b.image %}text-gray-300{% else %}text-gray-400{% endif %}">Products</p>
           </div>
           <div class="w-px bg-gray-200"></div>
           <div>
-            <p class="font-serif text-3xl font-light text-charcoal">27</p>
-            <p class="text-xs text-gray-400 uppercase tracking-wider mt-1">Governorates</p>
+            <p class="font-serif text-3xl font-light {% if b and b.image %}text-white{% else %}text-charcoal{% endif %}">27</p>
+            <p class="text-xs uppercase tracking-wider mt-1 {% if b and b.image %}text-gray-300{% else %}text-gray-400{% endif %}">Governorates</p>
           </div>
           <div class="w-px bg-gray-200"></div>
           <div>
-            <p class="font-serif text-3xl font-light text-charcoal">★ 5.0</p>
-            <p class="text-xs text-gray-400 uppercase tracking-wider mt-1">Rating</p>
+            <p class="font-serif text-3xl font-light {% if b and b.image %}text-white{% else %}text-charcoal{% endif %}">★ 5.0</p>
+            <p class="text-xs uppercase tracking-wider mt-1 {% if b and b.image %}text-gray-300{% else %}text-gray-400{% endif %}">Rating</p>
           </div>
         </div>
       </div>
 
-      <!-- Hero visual -->
+      <!-- Hero visual (only shown when no banner image) -->
+      {% if not b or not b.image %}
       <div class="hidden lg:flex items-center justify-center">
         <div class="relative w-[420px] h-[480px]">
           <div class="absolute inset-0 bg-gradient-to-br from-rose-200 to-pink-100 rounded-[40px] rotate-3 opacity-60"></div>
@@ -73,7 +105,6 @@
             </div>
             {% endif %}
           </div>
-          <!-- Floating tag -->
           {% if featured.0 %}
           <div class="absolute -bottom-4 -left-4 bg-white rounded-2xl shadow-lg p-3 flex items-center gap-3">
             <div class="w-10 h-10 bg-rose-100 rounded-xl flex items-center justify-center">
@@ -89,9 +120,11 @@
           {% endif %}
         </div>
       </div>
+      {% endif %}
     </div>
   </div>
 </section>
+{% endwith %}
 
 <!-- Categories Section -->
 {% if categories %}

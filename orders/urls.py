@@ -14,6 +14,7 @@ urlpatterns = [
     path('order/confirmation/<str:order_number>/', views.order_confirmation, name='order_confirmation'),
     path('orders/', views.order_history, name='order_history'),
     path('orders/<str:order_number>/', views.order_detail, name='order_detail'),
+    path('orders/<str:order_number>/cancel/', views.cancel_order, name='cancel_order'),
     path('orders/<str:order_number>/invoice/', views.order_invoice_pdf, name='order_invoice_pdf'),
     path('payment/paymob-callback/', views.paymob_callback, name='paymob_callback'),
 ]

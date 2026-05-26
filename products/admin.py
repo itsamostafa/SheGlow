@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Category, Product, ProductImage
+from .models import Category, Product, ProductImage, Review
 
 
 class ProductImageInline(admin.TabularInline):
@@ -52,3 +52,13 @@ class ProductImageAdmin(admin.ModelAdmin):
     list_display = ['product', 'is_primary', 'order']
     list_filter = ['is_primary']
     list_editable = ['is_primary', 'order']
+
+
+@admin.register(Review)
+class ReviewAdmin(admin.ModelAdmin):
+    list_display = ['product', 'user', 'rating', 'is_approved', 'created_at']
+    list_filter = ['is_approved', 'rating']
+    list_editable = ['is_approved']
+    search_fields = ['product__name', 'user__phone', 'body']
+    readonly_fields = ['product', 'user', 'rating', 'body', 'created_at']
+    ordering = ['-created_at']

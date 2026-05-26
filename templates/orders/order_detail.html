@@ -150,5 +150,24 @@
     </a>
   </div>
 
+  {% if order.status in 'pending,confirmed' and request.user == order.user %}
+  <div class="mt-4" x-data="{ confirming: false }">
+    <button @click="confirming = true" x-show="!confirming"
+            class="w-full text-sm text-red-400 hover:text-red-500 border border-red-100 hover:border-red-300 py-2.5 rounded-2xl transition-colors">
+      Cancel Order
+    </button>
+    <div x-show="confirming" x-cloak class="bg-red-50 border border-red-200 rounded-2xl p-4 text-center">
+      <p class="text-sm text-red-700 mb-3">Are you sure you want to cancel this order?</p>
+      <div class="flex gap-3">
+        <button @click="confirming = false" class="flex-1 text-sm border border-gray-200 py-2 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors">Keep Order</button>
+        <form method="post" action="{% url 'orders:cancel_order' order.order_number %}" class="flex-1">
+          {% csrf_token %}
+          <button type="submit" class="w-full text-sm bg-red-500 hover:bg-red-600 text-white py-2 rounded-xl transition-colors">Yes, Cancel</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
 </div>
 {% endblock %}

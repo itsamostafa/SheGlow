@@ -1,5 +1,17 @@
 from django.contrib import admin
-from .models import ContactMessage
+from .models import Banner, ContactMessage
+
+
+@admin.register(Banner)
+class BannerAdmin(admin.ModelAdmin):
+    list_display = ['title', 'badge_text', 'is_active', 'order']
+    list_editable = ['is_active', 'order']
+    list_filter = ['is_active']
+    fieldsets = (
+        (None, {'fields': ('title', 'subtitle', 'badge_text', 'image')}),
+        ('Buttons', {'fields': ('button_text', 'button_url', 'secondary_button_text', 'secondary_button_url')}),
+        ('Display', {'fields': ('is_active', 'order')}),
+    )
 
 
 @admin.register(ContactMessage)

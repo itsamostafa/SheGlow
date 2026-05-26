@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<style>
+  body { font-family: Inter, Arial, sans-serif; background: #FFF8FA; margin: 0; padding: 0; }
+  .wrap { max-width: 560px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; }
+  .header { background: linear-gradient(135deg, #F43F5E, #FB7185); padding: 32px 32px 24px; text-align: center; }
+  .logo { font-size: 28px; color: white; letter-spacing: 6px; font-weight: 300; }
+  .logo span { opacity: 0.8; }
+  .body { padding: 32px; }
+  .thankyou { font-size: 22px; color: #1F2937; font-weight: 300; margin-bottom: 6px; }
+  .order-badge { display: inline-block; background: #FFF0F3; color: #F43F5E; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: 1px; margin-bottom: 24px; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+  th { text-align: left; font-size: 11px; color: #9CA3AF; text-transform: uppercase; padding: 8px 0; border-bottom: 1px solid #FFE5E5; }
+  td { font-size: 14px; color: #374151; padding: 10px 0; border-bottom: 1px solid #FFF0F3; }
+  .totals { margin-top: 16px; }
+  .totals .row { display: flex; justify-content: space-between; font-size: 14px; color: #6B7280; margin-bottom: 6px; }
+  .totals .total-row { display: flex; justify-content: space-between; font-size: 16px; font-weight: 700; color: #1F2937; padding-top: 12px; border-top: 2px solid #F43F5E; margin-top: 8px; }
+  .section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #9CA3AF; margin: 24px 0 8px; }
+  .address-box { background: #FFF8FA; border-radius: 10px; padding: 14px 16px; font-size: 14px; color: #374151; line-height: 1.6; }
+  .cta { display: block; background: #F43F5E; color: white !important; text-decoration: none; text-align: center; padding: 14px; border-radius: 12px; font-size: 14px; font-weight: 600; margin: 24px 0 0; }
+  .footer { padding: 20px 32px; background: #FFF0F3; text-align: center; font-size: 12px; color: #9CA3AF; }
+</style>
+</head>
+<body>
+<div style="padding:24px 16px;background:#FFF8FA;">
+<div class="wrap">
+  <div class="header">
+    <div class="logo">She<span>Glow</span></div>
+    <p style="color:rgba(255,255,255,0.85);font-size:13px;margin-top:8px;">Your order is confirmed ✨</p>
+  </div>
+  <div class="body">
+    <p class="thankyou">Thank you, {{ order.full_name|default:"there" }}!</p>
+    <p class="order-badge">{{ order.order_number }}</p>
+
+    <table>
+      <thead>
+        <tr><th>Product</th><th style="text-align:right">Qty</th><th style="text-align:right">Price</th></tr>
+      </thead>
+      <tbody>
+        {% for item in order.items.all %}
+        <tr>
+          <td>{{ item.product_name }}</td>
+          <td style="text-align:right">{{ item.quantity }}</td>
+          <td style="text-align:right">{{ item.subtotal }} EGP</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="totals">
+      <div class="row"><span>Subtotal</span><span>{{ order.subtotal }} EGP</span></div>
+      <div class="row"><span>Shipping</span><span>{{ order.shipping_fee }} EGP</span></div>
+      {% if order.discount_amount %}<div class="row" style="color:#10B981"><span>Discount</span><span>−{{ order.discount_amount }} EGP</span></div>{% endif %}
+      <div class="total-row"><span>Total</span><span>{{ order.total }} EGP</span></div>
+    </div>
+
+    <p class="section-title">Delivery Address</p>
+    <div class="address-box">
+      <strong>{{ order.full_name }}</strong><br/>
+      {{ order.phone }}<br/>
+      {{ order.address }}, {{ order.city }}, {{ order.governorate }}
+    </div>
+
+    <p class="section-title">Payment</p>
+    <p style="font-size:14px;color:#374151;">{{ order.get_payment_method_display }}{% if order.payment_method == 'cod' %} — please have the exact amount ready on delivery{% endif %}</p>
+
+    <a href="{{ protocol }}://{{ domain }}/orders/{{ order.order_number }}/" class="cta">View Order Details</a>
+  </div>
+  <div class="footer">
+    &copy; SheGlow &nbsp;·&nbsp; Questions? Chat with us on WhatsApp
+  </div>
+</div>
+</div>
+</body>
+</html>

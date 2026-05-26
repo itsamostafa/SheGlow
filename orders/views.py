@@ -8,8 +8,10 @@ from decimal import Decimal
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.mail import EmailMultiAlternatives
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
@@ -67,12 +69,28 @@ def cart_view(request):
     items = list(cart.items.select_related('product__category').prefetch_related('product__images').all())
     subtotal = sum(item.subtotal for item in items)
     shipping_fee = Decimal(str(settings.DEFAULT_SHIPPING_FEE)) if subtotal > 0 else Decimal('0')
+
+    cart_items_data = []
+    for item in items:
+        img = item.product.primary_image
+        cart_items_data.append({
+            'id': item.product.id,
+            'name': item.product.name,
+            'slug': item.product.slug,
+            'category': item.product.category.name if item.product.category else '',
+            'price': float(item.product.effective_price),
+            'qty': item.quantity,
+            'stock': item.product.stock,
+            'image': img.image.url if img else '',
+        })
+
     return render(request, 'orders/cart.html', {
         'cart': cart,
         'items': items,
         'subtotal': subtotal,
         'shipping_fee': shipping_fee,
         'total': subtotal + shipping_fee,
+        'cart_items_json': json.dumps(cart_items_data),
     })
 
 
@@ -165,6 +183,28 @@ def apply_promo(request):
         'discount_type': promo.discount_type,
         'discount_value': str(promo.discount_value),
     })
+
+
+# ─────────────────────────── EMAIL ───────────────────────────────────────────
+
+def send_order_confirmation_email(order, request):
+    recipient = order.email or (order.user.email if order.user else None)
+    if not recipient:
+        return
+    ctx = {
+        'order': order,
+        'protocol': request.scheme,
+        'domain': request.get_host(),
+    }
+    subject = f'Order Confirmed — {order.order_number}'
+    text_body = render_to_string('accounts/emails/order_confirmation.txt', ctx)
+    html_body = render_to_string('accounts/emails/order_confirmation_html.html', ctx)
+    try:
+        msg = EmailMultiAlternatives(subject, text_body, settings.DEFAULT_FROM_EMAIL, [recipient])
+        msg.attach_alternative(html_body, 'text/html')
+        msg.send()
+    except Exception:
+        pass  # Never block order creation due to email failure
 
 
 # ─────────────────────────── SHIPPING FEES ───────────────────────────────────
@@ -371,6 +411,9 @@ def _process_checkout(request, cart, items, subtotal):
 
     # Clear cart
     cart.items.all().delete()
+
+    # Send confirmation email (non-blocking)
+    send_order_confirmation_email(order, request)
 
     # PayMob redirect if applicable
     if payment_method == 'paymob' and settings.PAYMOB_ENABLED:
@@ -663,6 +706,24 @@ def order_invoice_pdf(request, order_number):
     response = HttpResponse(buf.read(), content_type='application/pdf')
     response['Content-Disposition'] = f'inline; filename="invoice-{order.order_number}.pdf"'
     return response
+
+
+@login_required
+@require_POST
+def cancel_order(request, order_number):
+    order = get_object_or_404(Order, order_number=order_number, user=request.user)
+    if order.status not in ('pending', 'confirmed'):
+        messages.error(request, 'This order can no longer be cancelled.')
+        return redirect('orders:order_detail', order_number=order_number)
+    # Restore stock
+    for item in order.items.select_related('product').all():
+        if item.product:
+            from products.models import Product as Prod
+            Prod.objects.filter(pk=item.product.pk).update(stock=item.product.stock + item.quantity)
+    order.status = 'cancelled'
+    order.save(update_fields=['status'])
+    messages.success(request, f'Order {order.order_number} has been cancelled.')
+    return redirect('orders:order_detail', order_number=order_number)
 
 
 @login_required

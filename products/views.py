@@ -1,19 +1,25 @@
-from django.shortcuts import render, get_object_or_404
-from django.core.paginator import Paginator
-from django.db.models import Q, Case, When, IntegerField
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.db.models import Avg, Count, Q, Case, When, IntegerField
 from django.http import JsonResponse
-from .models import Product, Category
+from django.shortcuts import render, redirect, get_object_or_404
+from django.core.paginator import Paginator
+from django.views.decorators.http import require_POST
+from .models import Product, Category, Review
 
 
 def home(request):
+    from pages.models import Banner
     categories = Category.objects.filter(is_active=True)
     new_arrivals = Product.objects.filter(is_active=True).prefetch_related('images')[:12]
     featured_qs = Product.objects.filter(is_active=True, badge__in=['bestseller', 'new']).prefetch_related('images')
     featured = list(featured_qs[:8]) or list(new_arrivals[:8])
+    hero_banner = Banner.objects.filter(is_active=True).first()
     return render(request, 'products/home.html', {
         'categories': categories,
         'new_arrivals': new_arrivals,
         'featured': featured,
+        'hero_banner': hero_banner,
     })
 
 
@@ -83,11 +89,56 @@ def product_detail(request, slug):
     related = Product.objects.filter(
         is_active=True, category=product.category
     ).exclude(pk=product.pk).prefetch_related('images')[:4]
+
+    reviews = product.reviews.filter(is_approved=True).select_related('user')
+    rating_data = reviews.aggregate(avg=Avg('rating'), count=Count('id'))
+    avg_rating = rating_data['avg'] or 0
+    review_count = rating_data['count']
+
+    user_review = None
+    user_purchased = False
+    if request.user.is_authenticated:
+        user_review = reviews.filter(user=request.user).first()
+        if not user_review:
+            user_review = product.reviews.filter(user=request.user, is_approved=False).first()
+        from orders.models import OrderItem
+        user_purchased = OrderItem.objects.filter(
+            order__user=request.user,
+            product=product,
+            order__status__in=['delivered', 'confirmed'],
+        ).exists()
+
     return render(request, 'products/product_detail.html', {
         'product': product,
         'images': images,
         'related': related,
+        'reviews': reviews,
+        'avg_rating': avg_rating,
+        'review_count': review_count,
+        'user_review': user_review,
+        'user_purchased': user_purchased,
     })
+
+
+@login_required
+@require_POST
+def submit_review(request, slug):
+    product = get_object_or_404(Product, slug=slug, is_active=True)
+    rating = request.POST.get('rating', '')
+    body = request.POST.get('body', '').strip()
+    try:
+        rating = int(rating)
+        assert 1 <= rating <= 5
+    except (ValueError, AssertionError):
+        messages.error(request, 'Please select a rating.')
+        return redirect('product_detail', slug=slug)
+
+    Review.objects.update_or_create(
+        product=product, user=request.user,
+        defaults={'rating': rating, 'body': body, 'is_approved': False},
+    )
+    messages.success(request, 'Thanks for your review! It will appear after approval.')
+    return redirect('product_detail', slug=slug)
 
 
 def search(request):

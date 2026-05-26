@@ -23,7 +23,10 @@
         </div>
 
         <div class="mb-6">
-          <label class="block text-xs font-medium text-gray-600 mb-1.5 uppercase tracking-wide">Password</label>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-xs font-medium text-gray-600 uppercase tracking-wide">Password</label>
+            <a href="{% url 'accounts:password_reset' %}" class="text-xs text-rose-400 hover:text-rose-500 transition-colors">Forgot password?</a>
+          </div>
           {{ form.password }}
           {% if form.password.errors %}<p class="text-red-500 text-xs mt-1">{{ form.password.errors.0 }}</p>{% endif %}
         </div>
