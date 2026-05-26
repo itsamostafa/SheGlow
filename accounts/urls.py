@@ -1,6 +1,7 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views
+from .forms import PhonePasswordResetForm
 
 app_name = 'accounts'
 
@@ -10,13 +11,14 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('profile/', views.profile_view, name='profile'),
 
-    # Password reset flow
+    # Password reset flow (phone-based lookup)
     path('password-reset/',
          auth_views.PasswordResetView.as_view(
              template_name='accounts/password_reset.html',
              email_template_name='accounts/emails/password_reset_email.txt',
              subject_template_name='accounts/emails/password_reset_subject.txt',
              success_url='/accounts/password-reset/sent/',
+             form_class=PhonePasswordResetForm,
          ),
          name='password_reset'),
     path('password-reset/sent/',

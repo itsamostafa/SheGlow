@@ -166,7 +166,7 @@
           <input type="text" x-model="searchQuery"
                  @input.debounce.300ms="doSearch()"
                  @keydown.escape="closeSearch()"
-                 @keydown.enter.prevent="searchQuery.length >= 4 && (window.location='/search/?q='+encodeURIComponent(searchQuery))"
+                 @keydown.enter.prevent="searchQuery.length >= 2 && (window.location='/search/?q='+encodeURIComponent(searchQuery))"
                  placeholder="Search for bracelets, necklaces, rings…"
                  x-ref="searchInput"
                  class="w-full pl-4 pr-10 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 bg-gray-50" />
@@ -199,13 +199,13 @@
                 </div>
               </a>
             </template>
-            <a x-show="searchQuery.length >= 4 && !searchLoading" :href="'/search/?q='+encodeURIComponent(searchQuery)"
+            <a x-show="searchQuery.length >= 2 && !searchLoading" :href="'/search/?q='+encodeURIComponent(searchQuery)"
                class="block px-4 py-3 text-sm text-center text-rose-400 hover:bg-rose-50 font-medium border-t border-gray-50">
               View all results for "<span x-text="searchQuery"></span>" →
             </a>
           </div>
           <!-- No results -->
-          <div x-show="searchNoResults && !searchLoading && searchQuery.length >= 4" x-cloak
+          <div x-show="searchNoResults && !searchLoading && searchQuery.length >= 2" x-cloak
                class="absolute top-full left-0 right-0 mt-1 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 px-4 py-4 text-sm text-gray-500 text-center">
             No results for "<span x-text="searchQuery"></span>"
           </div>
@@ -337,7 +337,7 @@
         searchLoading: false,
         searchNoResults: false,
         async doSearch() {
-          if (this.searchQuery.length < 4) {
+          if (this.searchQuery.length < 2) {
             this.searchResults = [];
             this.searchNoResults = false;
             return;

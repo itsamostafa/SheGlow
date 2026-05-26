@@ -145,7 +145,7 @@ new Chart(document.getElementById('revenueChart'), {
     }),
     datasets: [{
       label: 'Revenue (EGP)',
-      data: dailyData.map(d => parseFloat(d.revenue)),
+      data: dailyData.map(d => d.revenue),
       borderColor: '#F43F5E',
       backgroundColor: 'rgba(244,63,94,0.08)',
       tension: 0.4,
@@ -170,7 +170,7 @@ new Chart(document.getElementById('paymentChart'), {
   data: {
     labels: paymentData.map(p => paymentLabelsMap[p.payment_method] || p.payment_method),
     datasets: [{
-      data: paymentData.map(p => parseFloat(p.revenue)),
+      data: paymentData.map(p => p.revenue),
       backgroundColor: ['#F43F5E', '#A855F7', '#F59E0B', '#10B981'],
       borderWidth: 0,
     }]

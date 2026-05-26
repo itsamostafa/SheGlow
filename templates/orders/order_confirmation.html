@@ -103,6 +103,23 @@
     <p class="text-sm text-gray-500">{{ order.email }}</p>
   </div>
 
+  <!-- Guest: track order panel -->
+  {% if not user.is_authenticated %}
+  <div class="bg-rose-50 border border-rose-100 rounded-2xl p-4 mb-6 flex items-start gap-3">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-rose-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+    </svg>
+    <div class="flex-1 min-w-0">
+      <p class="text-sm font-medium text-gray-800 mb-0.5">Want to check your order status later?</p>
+      <p class="text-xs text-gray-500 mb-2">Save your order number <strong class="font-mono text-gray-700">{{ order.order_number }}</strong> and use the tracking page — no account needed.</p>
+      <a href="{% url 'orders:track_order' %}"
+         class="inline-flex items-center gap-1.5 text-xs font-medium text-rose-500 hover:text-rose-600 transition-colors">
+        Track Order →
+      </a>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- Actions -->
   <div class="flex flex-col sm:flex-row gap-3">
     {% if user.is_authenticated %}

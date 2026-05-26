@@ -36,6 +36,7 @@ class ProductAdmin(admin.ModelAdmin):
         ('Content', {'fields': ('description',)}),
         ('Pricing & Stock', {'fields': ('price', 'sale_price', 'stock')}),
         ('Display', {'fields': ('badge', 'is_active')}),
+        ('SEO', {'fields': ('meta_title', 'meta_description'), 'classes': ('collapse',)}),
         ('Timestamps', {'fields': ('created_at', 'updated_at'), 'classes': ('collapse',)}),
     )
 

@@ -8,6 +8,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models import F
 from django.core.mail import EmailMultiAlternatives
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -391,11 +392,11 @@ def _process_checkout(request, cart, items, subtotal):
             quantity=item.quantity,
             subtotal=item.subtotal,
         )
-        Product.objects.filter(pk=item.product.pk).update(stock=item.product.stock - item.quantity)
+        Product.objects.filter(pk=item.product.pk).update(stock=F('stock') - item.quantity)
 
     # Increment promo usage
     if promo_obj:
-        PromoCode.objects.filter(pk=promo_obj.pk).update(times_used=promo_obj.times_used + 1)
+        PromoCode.objects.filter(pk=promo_obj.pk).update(times_used=F('times_used') + 1)
 
     # Handle receipt upload
     if receipt_file:
@@ -719,11 +720,26 @@ def cancel_order(request, order_number):
     for item in order.items.select_related('product').all():
         if item.product:
             from products.models import Product as Prod
-            Prod.objects.filter(pk=item.product.pk).update(stock=item.product.stock + item.quantity)
+            Prod.objects.filter(pk=item.product.pk).update(stock=F('stock') + item.quantity)
     order.status = 'cancelled'
     order.save(update_fields=['status'])
     messages.success(request, f'Order {order.order_number} has been cancelled.')
     return redirect('orders:order_detail', order_number=order_number)
+
+
+def track_order(request):
+    order = None
+    error = None
+    if request.method == 'POST':
+        order_number = request.POST.get('order_number', '').strip().upper()
+        phone = request.POST.get('phone', '').strip()
+        if order_number and phone:
+            order = Order.objects.filter(order_number=order_number, phone=phone).prefetch_related('items').first()
+            if not order:
+                error = 'No order found with that order number and phone. Please check and try again.'
+        else:
+            error = 'Please enter both order number and phone number.'
+    return render(request, 'orders/track.html', {'order': order, 'error': error})
 
 
 @login_required

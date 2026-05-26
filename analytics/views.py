@@ -1,9 +1,9 @@
 import json
-from django.contrib.admin.views.decorators import staff_member_required
-from django.core.serializers.json import DjangoJSONEncoder
+from functools import wraps
+from django.contrib import messages
 from django.db.models import Sum, Count, Avg
 from django.db.models.functions import TruncDay
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.utils import timezone
 from datetime import timedelta
 
@@ -11,9 +11,22 @@ from orders.models import Order, OrderItem
 from products.models import Product
 
 
+def staff_required(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            messages.error(request, 'Please log in to access that page.')
+            return redirect(f'/accounts/login/?next={request.path}')
+        if not request.user.is_staff:
+            messages.error(request, 'Staff access only.')
+            return redirect('/')
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+
 # ─── Sales Dashboard ────────────────────────────────────────────────────────
 
-@staff_member_required
+@staff_required
 def sales_dashboard(request):
     period = request.GET.get('period', '30')
     try:
@@ -29,20 +42,22 @@ def sales_dashboard(request):
     avg_order_value = orders.aggregate(a=Avg('total'))['a'] or 0
     total_items = OrderItem.objects.filter(order__in=orders).aggregate(t=Sum('quantity'))['t'] or 0
 
-    daily = list(
-        orders
+    daily = [
+        {'day': d['day'], 'revenue': float(d['revenue'] or 0), 'count': d['count']}
+        for d in orders
         .annotate(day=TruncDay('created_at'))
         .values('day')
         .annotate(revenue=Sum('total'), count=Count('id'))
         .order_by('day')
-    )
+    ]
 
-    by_payment = list(
-        orders
+    by_payment = [
+        {'payment_method': p['payment_method'], 'revenue': float(p['revenue'] or 0), 'count': p['count']}
+        for p in orders
         .values('payment_method')
         .annotate(revenue=Sum('total'), count=Count('id'))
         .order_by('-revenue')
-    )
+    ]
 
     by_governorate = list(
         orders
@@ -73,8 +88,8 @@ def sales_dashboard(request):
         'total_orders': total_orders,
         'avg_order_value': avg_order_value,
         'total_items': total_items,
-        'daily_json': json.dumps(daily, cls=DjangoJSONEncoder),
-        'by_payment_json': json.dumps(by_payment, cls=DjangoJSONEncoder),
+        'daily_json': json.dumps(daily, default=str),
+        'by_payment_json': json.dumps(by_payment),
         'by_payment': by_payment,
         'by_governorate': by_governorate,
         'top_products': top_products,
@@ -85,7 +100,7 @@ def sales_dashboard(request):
 
 # ─── Inventory Dashboard ─────────────────────────────────────────────────────
 
-@staff_member_required
+@staff_required
 def inventory_dashboard(request):
     low_stock_threshold = 10
 

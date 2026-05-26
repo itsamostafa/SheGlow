@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% load product_tags %}
+
+{% block title %}Track Your Order — SheGlow{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 py-16">
+
+  <div class="text-center mb-10">
+    <div class="inline-flex items-center justify-center w-14 h-14 bg-rose-100 rounded-2xl mb-4">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+      </svg>
+    </div>
+    <h1 class="font-serif text-3xl font-light text-charcoal mb-2">Track Your Order</h1>
+    <p class="text-sm text-gray-500">Enter your order number and phone number to see the latest status.</p>
+  </div>
+
+  <!-- Lookup form -->
+  <form method="post" class="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm mb-8">
+    {% csrf_token %}
+    {% if error %}
+    <div class="bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl px-4 py-3 mb-6">{{ error }}</div>
+    {% endif %}
+    <div class="space-y-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Order Number</label>
+        <input type="text" name="order_number" value="{{ request.POST.order_number }}"
+               placeholder="e.g. SG-20250526-0001"
+               class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-300 uppercase placeholder-normal"
+               autocomplete="off" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Phone Number</label>
+        <input type="text" name="phone" value="{{ request.POST.phone }}"
+               placeholder="01XXXXXXXXX"
+               class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-300" />
+      </div>
+    </div>
+    <button type="submit"
+            class="mt-6 w-full bg-charcoal hover:bg-gray-800 text-white font-medium py-3.5 rounded-xl transition-colors">
+      Track Order
+    </button>
+  </form>
+
+  {% if order %}
+  <!-- Order found -->
+  <div class="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
+
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-rose-50 to-pink-50 px-6 py-5 border-b border-gray-100">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p class="text-xs text-gray-400 uppercase tracking-wider mb-0.5">Order</p>
+          <p class="font-medium text-gray-800">{{ order.order_number }}</p>
+        </div>
+        <div class="text-right">
+          <p class="text-xs text-gray-400 uppercase tracking-wider mb-0.5">Placed</p>
+          <p class="font-medium text-gray-800">{{ order.created_at|date:"d M Y" }}</p>
+        </div>
+        <span class="px-3 py-1 rounded-full text-xs font-medium
+          {% if order.status == 'delivered' %}bg-green-100 text-green-700
+          {% elif order.status == 'cancelled' %}bg-red-100 text-red-600
+          {% elif order.status == 'shipped' %}bg-blue-100 text-blue-700
+          {% else %}bg-amber-100 text-amber-700{% endif %}">
+          {{ order.get_status_display }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Status stepper -->
+    {% if order.status != 'cancelled' %}
+    <div class="px-6 py-6 border-b border-gray-50">
+      <div class="flex items-center">
+        {% for slug, done, label in order.status_steps %}
+        <div class="flex-1 flex flex-col items-center relative">
+          {% if not forloop.first %}
+          <div class="absolute top-3.5 -left-1/2 w-full h-0.5 {% if done %}bg-rose-300{% else %}bg-gray-100{% endif %} -translate-y-1/2 z-0"></div>
+          {% endif %}
+          <div class="relative z-10 w-7 h-7 rounded-full flex items-center justify-center
+            {% if done %}bg-rose-400 text-white{% else %}bg-gray-100 text-gray-300{% endif %}">
+            {% if done %}
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+            </svg>
+            {% else %}
+            <span class="w-2 h-2 bg-gray-300 rounded-full block"></span>
+            {% endif %}
+          </div>
+          <p class="text-xs mt-1 {% if done %}text-rose-400 font-medium{% else %}text-gray-300{% endif %} whitespace-nowrap">{{ label }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Shipping info -->
+    <div class="px-6 py-5 border-b border-gray-50 grid sm:grid-cols-2 gap-4 text-sm">
+      <div>
+        <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Ship to</p>
+        <p class="text-gray-700 font-medium">{{ order.full_name }}</p>
+        <p class="text-gray-500">{{ order.address }}</p>
+        <p class="text-gray-500">{{ order.city }}, {{ order.governorate }}</p>
+      </div>
+      <div>
+        <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Payment</p>
+        <p class="text-gray-700 font-medium">{{ order.get_payment_method_display }}</p>
+        <p class="text-gray-500 capitalize">{{ order.payment_status }}</p>
+      </div>
+    </div>
+
+    <!-- Items -->
+    <div class="px-6 py-5">
+      <p class="text-xs text-gray-400 uppercase tracking-wider mb-3">Items</p>
+      <div class="space-y-3">
+        {% for item in order.items.all %}
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            {% if item.product and item.product.primary_image %}
+            <img src="{{ item.product.primary_image.image.url }}" alt="{{ item.product_name }}"
+                 class="w-10 h-10 object-cover rounded-lg border border-gray-100" />
+            {% else %}
+            <div class="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+            </div>
+            {% endif %}
+            <div>
+              <p class="text-sm text-gray-700">{{ item.product_name }}</p>
+              <p class="text-xs text-gray-400">Qty: {{ item.quantity }} × {{ item.price|currency }}</p>
+            </div>
+          </div>
+          <p class="text-sm font-medium text-gray-800">{{ item.subtotal|currency }}</p>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Totals -->
+      <div class="border-t border-gray-100 mt-4 pt-4 space-y-1.5 text-sm">
+        <div class="flex justify-between text-gray-500">
+          <span>Subtotal</span><span>{{ order.subtotal|currency }}</span>
+        </div>
+        <div class="flex justify-between text-gray-500">
+          <span>Shipping</span><span>{{ order.shipping_fee|currency }}</span>
+        </div>
+        {% if order.discount_amount %}
+        <div class="flex justify-between text-green-600">
+          <span>Discount</span><span>−{{ order.discount_amount|currency }}</span>
+        </div>
+        {% endif %}
+        <div class="flex justify-between font-semibold text-gray-900 text-base pt-1">
+          <span>Total</span><span>{{ order.total|currency }}</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  {% endif %}
+
+  <p class="text-center text-sm text-gray-400 mt-8">
+    Have an account? <a href="/accounts/login/" class="text-rose-400 hover:text-rose-500">Log in</a> to see your full order history.
+  </p>
+
+</div>
+{% endblock %}

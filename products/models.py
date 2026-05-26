@@ -42,6 +42,8 @@ class Product(models.Model):
     stock = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
     badge = models.CharField(max_length=20, choices=BADGE_CHOICES, blank=True, default='')
+    meta_title = models.CharField(max_length=200, blank=True)
+    meta_description = models.CharField(max_length=500, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
