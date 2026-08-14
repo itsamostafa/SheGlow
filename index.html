@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SheGlow</title>
+  <style>
+    :root {
+      color-scheme: light;
+    }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, #fff0f3, #fff8f3);
+      color: #4a2435;
+      text-align: center;
+      padding: 24px;
+    }
+    main {
+      max-width: 640px;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    }
+    h1 {
+      margin-top: 0;
+      margin-bottom: 12px;
+    }
+    p {
+      margin: 10px 0;
+      line-height: 1.5;
+    }
+    a {
+      color: #be185d;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    code {
+      background: #fdf2f8;
+      border-radius: 6px;
+      padding: 2px 6px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>SheGlow</h1>
+    <p>This repository contains the Django source code for the SheGlow storefront.</p>
+    <p>GitHub Pages cannot run Django applications directly, so this URL now serves as a project landing page instead of the full app.</p>
+    <p>For setup and deployment, see <a href="./INSTALLATION.md">INSTALLATION.md</a>.</p>
+    <p>Run locally with <code>python manage.py runserver</code> after installing dependencies from <code>requirements.txt</code>.</p>
+  </main>
+</body>
+</html>
